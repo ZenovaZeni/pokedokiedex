@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
-import { Search, X, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, SortAsc, Hash, PenLine, SlidersHorizontal, Camera, CheckSquare, Plus, Check } from 'lucide-react'
+import { Search, X, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, SortAsc, Hash, PenLine, SlidersHorizontal, Camera, CheckSquare, Plus, Check, Sparkles, TrendingUp } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { searchCards, getSets, getCustomCards, bulkAddToCollection } from '../api/client'
 import { CardItem, CustomCardModal, CardModal } from '../components/CardItem'
@@ -27,9 +27,97 @@ function TiltCardWrapper({ children, className, onClick }) {
 }
 
 const CODE_NUMBER_RE = /^([A-Za-z]+\d*)\s+(\d+)$/
+const SLASH_NUMBER_RE = /(?:^|\s)(\d{1,4})\s*\/\s*\d{1,4}(?:\s|$)/
+
+const PRICE_FIELDS = [
+  'price_tcg_holo_market',
+  'price_tcg_reverse_market',
+  'price_tcg_normal_market',
+  'price_market',
+  'price_trend',
+  'price_avg1',
+  'price_avg7',
+  'price_avg30',
+  'price_low',
+]
 
 const TYPES = ['Fire', 'Water', 'Grass', 'Lightning', 'Psychic', 'Fighting', 'Darkness', 'Metal', 'Dragon', 'Colorless', 'Fairy', 'Stellar']
 const RARITIES = ['Common', 'Uncommon', 'Rare', 'Rare Holo', 'Rare Ultra', 'Rare Secret', 'Illustration Rare', 'Special Illustration Rare', 'Hyper Rare', 'Double Rare', 'ACE SPEC Rare', 'Promo', 'Amazing Rare']
+
+function normalizeCardNumber(value = '') {
+  return String(value).trim().replace(/^0+/, '') || '0'
+}
+
+function getCardPrice(card) {
+  for (const field of PRICE_FIELDS) {
+    const value = Number(card?.[field])
+    if (Number.isFinite(value) && value > 0) return value
+  }
+  return null
+}
+
+function buildSmartSearch(rawInput, allSets) {
+  const raw = rawInput.trim()
+  if (!raw) return null
+
+  const cleaned = raw
+    .replace(/[“”]/g, '"')
+    .replace(/[’]/g, "'")
+    .replace(/#/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  const slashMatch = SLASH_NUMBER_RE.exec(cleaned)
+  const codeMatch = CODE_NUMBER_RE.exec(cleaned)
+  const tokens = cleaned.split(' ')
+  const firstToken = tokens[0]?.toLowerCase()
+  const matchedSet = allSets.find((set) => {
+    const candidates = [set.tcg_set_id, set.id, set.abbreviation, set.name].filter(Boolean).map((value) => value.toLowerCase())
+    return candidates.includes(firstToken)
+  })
+
+  if (codeMatch) {
+    return {
+      type: 'code',
+      query: cleaned,
+      cardNumber: codeMatch[2],
+      setCode: codeMatch[1],
+      setId: matchedSet?.id || matchedSet?.tcg_set_id || '',
+      label: `Looking for card #${codeMatch[2]} from ${codeMatch[1].toUpperCase()}`,
+      helper: 'Exact printed codes are best when the card image text is hard to read.',
+    }
+  }
+
+  if (slashMatch) {
+    const number = slashMatch[1]
+    const nameQuery = cleaned.replace(SLASH_NUMBER_RE, ' ').replace(/\s+/g, ' ').trim()
+    return {
+      type: 'collector-number',
+      query: nameQuery || cleaned,
+      cardNumber: number,
+      setId: matchedSet?.id || matchedSet?.tcg_set_id || '',
+      label: `Prioritizing card #${number}`,
+      helper: nameQuery ? `Searching "${nameQuery}" first, then ranking matching numbers higher.` : 'Add a card name or set code for tighter matching.',
+    }
+  }
+
+  if (matchedSet && tokens.length > 1) {
+    return {
+      type: 'set-aware',
+      query: tokens.slice(1).join(' '),
+      setId: matchedSet.id || matchedSet.tcg_set_id || '',
+      label: `Searching inside ${matchedSet.name || matchedSet.abbreviation || matchedSet.id}`,
+      helper: 'Set-aware searches help separate reprints and variants.',
+    }
+  }
+
+  return {
+    type: 'name',
+    query: cleaned,
+    label: 'Smart name search',
+    helper: 'Add a printed number like "4/102" or a set code like "MEP 022" to narrow it down.',
+  }
+}
 
 function FilterForm({ filters, setFilter, allSeries, setsForSeries, toggleSortOrder, t }) {
   return (
@@ -112,14 +200,13 @@ function FilterForm({ filters, setFilter, allSeries, setsForSeries, toggleSortOr
 }
 
 export default function CardSearch() {
-  const { t } = useSettings()
+  const { t, formatPrice } = useSettings()
   const queryClient = useQueryClient()
   const [searchInput, setSearchInput] = useState('')
   const [filters, setFilters] = useState({
     name: '', type: '', rarity: '', set_id: '', series: '', artist: '',
     hp_min: '', hp_max: '', sort_by: '', sort_order: 'asc',
   })
-  const [langFilter, setLangFilter] = useState('all') // 'de' | 'en' | 'all'
   const [page, setPage] = useState(1)
   const [showFilters, setShowFilters] = useState(false)
   const [showCustomModal, setShowCustomModal] = useState(false)
@@ -127,6 +214,7 @@ export default function CardSearch() {
   const [selectedCard, setSelectedCard] = useState(null)
   const [selectMode, setSelectMode] = useState(false)
   const [selectedItems, setSelectedItems] = useState(new Map()) // card.id -> { card_id, lang }
+  const langFilter = 'all'
   const pageSize = 20
 
   const { data: recentCustomCards = [] } = useQuery({
@@ -157,6 +245,9 @@ export default function CardSearch() {
     return map
   }, [allSets])
 
+  const smartSearch = useMemo(() => buildSmartSearch(searchInput, allSets), [allSets, searchInput])
+  const activeSmartSearch = useMemo(() => buildSmartSearch(filters.name, allSets), [allSets, filters.name])
+
   const queryParams = {
     name: filters.name || undefined,
     type: filters.type || undefined,
@@ -167,7 +258,7 @@ export default function CardSearch() {
     hp_max: filters.hp_max ? parseInt(filters.hp_max) : undefined,
     sort_by: filters.sort_by || undefined,
     sort_order: filters.sort_order || 'asc',
-    lang: langFilter,
+    lang: 'all',
     page,
     page_size: pageSize,
   }
@@ -175,9 +266,9 @@ export default function CardSearch() {
   const hasQuery = filters.name || filters.type || filters.rarity || filters.set_id || filters.artist || filters.hp_min || filters.hp_max || filters.series
 
   const { data, isLoading, error, isFetching } = useQuery({
-    queryKey: ['card-search', queryParams, langFilter],
+    queryKey: ['card-search', queryParams],
     queryFn: () => searchCards(queryParams).then(r => r.data),
-    enabled: !!hasQuery || langFilter !== 'all',
+    enabled: !!hasQuery,
     placeholderData: (prev) => prev,
   })
 
@@ -185,7 +276,12 @@ export default function CardSearch() {
 
   const handleSearch = (e) => {
     e.preventDefault()
-    setFilters(prev => ({ ...prev, name: searchInput }))
+    const parsed = buildSmartSearch(searchInput, allSets)
+    setFilters(prev => ({
+      ...prev,
+      name: parsed?.query || searchInput.trim(),
+      set_id: parsed?.setId || prev.set_id,
+    }))
     setPage(1)
   }
 
@@ -209,7 +305,6 @@ export default function CardSearch() {
   const clearFilters = () => {
     setFilters({ name: '', type: '', rarity: '', set_id: '', series: '', artist: '', hp_min: '', hp_max: '', sort_by: '', sort_order: 'asc' })
     setSearchInput('')
-    setLangFilter('all')
     setPage(1)
   }
 
@@ -262,7 +357,7 @@ export default function CardSearch() {
 
   const filterFormProps = { filters, setFilter, allSeries, setsForSeries, toggleSortOrder, t }
 
-  const cardLang = (card) => card._lang || card.lang || (langFilter === 'all' ? 'en' : langFilter)
+  const cardLang = (card) => card._lang || card.lang || 'en'
 
   const toggleSelected = (card) => {
     setSelectedItems(prev => {
@@ -276,7 +371,7 @@ export default function CardSearch() {
   const selectAllOnPage = () => {
     setSelectedItems(prev => {
       const next = new Map(prev)
-      for (const card of (data?.data || [])) {
+      for (const card of smartResults) {
         next.set(card.id, { card_id: card.id, lang: cardLang(card), variant: getDefaultVariantOrNull(card) })
       }
       return next
@@ -335,6 +430,44 @@ export default function CardSearch() {
     onError: () => toast.error(t('cardSearch.bulkAddFailed')),
   })
 
+  const smartResults = useMemo(() => {
+    const cards = data?.data || []
+    if (!activeSmartSearch) return cards
+    const wantedNumber = activeSmartSearch.cardNumber ? normalizeCardNumber(activeSmartSearch.cardNumber) : ''
+    const wantedName = activeSmartSearch.query.toLowerCase()
+
+    return [...cards].sort((a, b) => {
+      const score = (card) => {
+        let value = 0
+        const name = (card.name || '').toLowerCase()
+        if (wantedName && name === wantedName) value += 30
+        if (wantedName && name.includes(wantedName)) value += 15
+        if (wantedNumber && normalizeCardNumber(card.number) === wantedNumber) value += 40
+        if (activeSmartSearch.setId && [card.set_id, card.set?.id, card.set?.tcg_set_id].filter(Boolean).includes(activeSmartSearch.setId)) value += 20
+        if (getCardPrice(card)) value += 3
+        return value
+      }
+      return score(b) - score(a)
+    })
+  }, [activeSmartSearch, data?.data])
+
+  const valueInsight = useMemo(() => {
+    const priced = smartResults
+      .map((card) => ({ card, price: getCardPrice(card) }))
+      .filter((item) => item.price)
+      .sort((a, b) => b.price - a.price)
+
+    if (!priced.length) return null
+    const prices = priced.map((item) => item.price).sort((a, b) => a - b)
+    const middle = prices[Math.floor(prices.length / 2)]
+    return {
+      topCard: priced[0].card,
+      topPrice: priced[0].price,
+      medianPrice: middle,
+      count: priced.length,
+    }
+  }, [smartResults])
+
   return (
     <div className="space-y-4 pb-2">
 
@@ -373,7 +506,7 @@ export default function CardSearch() {
       </div>
 
       {/* ─── Language Filter ──────────────────────────────────────── */}
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="hidden">
         <span className="text-xs text-text-muted">{t('lang.filter')}:</span>
         {[
           { value: 'all', label: t('lang.all') },
@@ -382,7 +515,7 @@ export default function CardSearch() {
         ].map(opt => (
           <button
             key={opt.value}
-            onClick={() => { setLangFilter(opt.value); setPage(1) }}
+            onClick={() => setPage(1)}
             className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
               langFilter === opt.value
                 ? opt.value === 'de'
@@ -400,7 +533,7 @@ export default function CardSearch() {
 
       {/* ─── Search Bar + Filter Button ───────────────────────────── */}
       <div className="card">
-        <form onSubmit={handleSearch} className="flex gap-2">
+        <form onSubmit={handleSearch} className="flex flex-col gap-2 sm:flex-row">
           {/* Search input */}
           <div className="flex-1 min-w-0 relative">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
@@ -409,7 +542,7 @@ export default function CardSearch() {
               placeholder={t('cardSearch.searchPlaceholder')}
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="input pl-9 pr-4"
+              className="input h-12 pl-9 pr-4 text-base sm:h-auto sm:text-sm"
             />
             {isCodeNumberSearch && (
               <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-1 text-xs text-yellow pointer-events-none">
@@ -419,7 +552,7 @@ export default function CardSearch() {
             )}
           </div>
 
-          <button type="submit" className="btn-primary px-4 sm:px-6 flex-shrink-0">
+          <button type="submit" className="btn-primary h-12 px-4 sm:h-auto sm:px-6 flex-shrink-0">
             {t('common.search')}
           </button>
 
@@ -427,7 +560,7 @@ export default function CardSearch() {
           <button
             type="button"
             onClick={() => setShowFilters(true)}
-            className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl border transition-colors text-sm font-medium
+            className={`flex h-12 flex-shrink-0 items-center justify-center gap-1.5 px-3 py-2 rounded-xl border transition-colors text-sm font-medium sm:h-auto
               ${hasActiveFilters
                 ? 'bg-brand-red/10 border-brand-red/50 text-brand-red'
                 : 'border-border text-text-muted hover:text-text-primary hover:border-border'
@@ -445,12 +578,42 @@ export default function CardSearch() {
           </button>
 
           {hasQuery && (
-            <button type="button" onClick={clearFilters} className="btn-ghost flex-shrink-0">
+            <button type="button" onClick={clearFilters} className="btn-ghost h-11 flex-shrink-0 sm:h-auto">
               <X size={16} />
-              <span className="hidden sm:inline">{t('common.clear')}</span>
+              <span>{t('common.clear')}</span>
             </button>
           )}
         </form>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <div className="rounded-xl border border-white/5 bg-bg-primary/60 px-3 py-2">
+            <p className="flex items-center gap-1.5 text-xs font-bold text-text-primary">
+              <Sparkles size={13} className="text-yellow" />
+              {smartSearch?.label || t('cardSearch.smartSearchTitle')}
+            </p>
+            <p className="mt-1 text-[11px] leading-4 text-text-muted">
+              {smartSearch?.helper || t('cardSearch.smartSearchHint')}
+            </p>
+          </div>
+          {valueInsight ? (
+            <div className="rounded-xl border border-green/20 bg-green/10 px-3 py-2">
+              <p className="flex items-center gap-1.5 text-xs font-bold text-green">
+                <TrendingUp size={13} />
+                {t('cardSearch.valueCheck')}
+              </p>
+              <p className="mt-1 text-[11px] leading-4 text-text-secondary">
+                {t('cardSearch.valueCheckBody')
+                  .replace('{top}', formatPrice(valueInsight.topPrice))
+                  .replace('{median}', formatPrice(valueInsight.medianPrice))
+                  .replace('{count}', valueInsight.count.toLocaleString())}
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-white/5 bg-bg-primary/60 px-3 py-2">
+              <p className="text-xs font-bold text-text-primary">{t('cardSearch.valueHelpTitle')}</p>
+              <p className="mt-1 text-[11px] leading-4 text-text-muted">{t('cardSearch.valueHelpBody')}</p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ─── Filter Sheet ─────────────────────────────────────────── */}
@@ -527,7 +690,7 @@ export default function CardSearch() {
               <div className="flex-1" />
               <button
                 onClick={selectAllOnPage}
-                disabled={!data.data?.length}
+                disabled={!smartResults.length}
                 className="btn-ghost text-sm disabled:opacity-50"
               >
                 {t('cardSearch.selectPage')}
@@ -577,7 +740,7 @@ export default function CardSearch() {
             )}
           </div>
 
-          {data.data?.length === 0 ? (
+          {smartResults.length === 0 ? (
             <div className="text-center py-12 space-y-4">
               <p className="text-text-muted">{t('cardSearch.noCardsFound')}</p>
               <button onClick={() => setShowCustomModal(true)} className="btn-ghost border-yellow/30 text-yellow hover:bg-yellow/10 mx-auto">
@@ -586,7 +749,7 @@ export default function CardSearch() {
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {data.data?.map((card) => {
+              {smartResults.map((card) => {
                 const imgSrc = card.images?.small || card.images_small || (card.image ? `${card.image}/low.webp` : null)
                 const setObj = setMap[card.set_id] || null
                 const cardSetName = card.set?.name || setObj?.abbreviation || setObj?.name || card.set_id || ''
@@ -623,15 +786,6 @@ export default function CardSearch() {
                     <div className="mt-1.5 px-0.5">
                       <div className="flex items-center gap-1">
                         <p className="text-[11px] font-semibold text-text-primary truncate leading-tight flex-1">{card.name}</p>
-                        {card._lang && langFilter === 'all' && (
-                          <span className={`flex-shrink-0 text-[9px] font-black px-1 py-0.5 rounded leading-none ${
-                            card._lang === 'de'
-                              ? 'bg-yellow/20 text-yellow'
-                              : 'bg-blue/20 text-blue-400'
-                          }`}>
-                            {card._lang.toUpperCase()}
-                          </span>
-                        )}
                       </div>
                       <p className="text-[10px] text-text-muted truncate">{cardDisplay}</p>
                     </div>
@@ -656,7 +810,7 @@ export default function CardSearch() {
         <CardModal
           card={selectedCard}
           onClose={() => setSelectedCard(null)}
-          defaultLang={selectedCard._lang || (langFilter === 'all' ? 'en' : langFilter)}
+          defaultLang={selectedCard._lang || 'en'}
         />
       )}
 
