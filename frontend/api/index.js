@@ -1,3 +1,7 @@
+import { createHash } from 'node:crypto'
+import { ConvexHttpClient } from 'convex/browser'
+import { api as convexApi } from '../convex/_generated/api.js'
+
 const sampleCard = {
   id: 'base1-58_en',
   tcg_card_id: 'base1-58',
@@ -63,9 +67,111 @@ function send(res, status, data) {
   res.end(JSON.stringify(data))
 }
 
-export default function handler(req, res) {
+function authToken(req) {
+  const header = req.headers.authorization || ''
+  return header.startsWith('Bearer ') ? header.slice('Bearer '.length) : ''
+}
+
+function convexClient() {
+  const convexUrl = process.env.CONVEX_URL || process.env.VITE_CONVEX_URL
+  return convexUrl ? new ConvexHttpClient(convexUrl) : null
+}
+
+async function readBody(req) {
+  const chunks = []
+  for await (const chunk of req) chunks.push(chunk)
+  return Buffer.concat(chunks).toString('utf8')
+}
+
+function passwordHash(username, password) {
+  return createHash('sha256')
+    .update(`${username.trim().toLowerCase()}:${password}:pokedokiedex-v1`)
+    .digest('hex')
+}
+
+async function convexResponse(req, res, path) {
+  const convex = convexClient()
+  if (!convex) return false
+
+  if (path === 'auth/mode') {
+    send(res, 200, { multi_user: true })
+    return true
+  }
+
+  if (path === 'auth/login') {
+    const body = await readBody(req)
+    const params = new URLSearchParams(body)
+    const username = params.get('username') || ''
+    const password = params.get('password') || ''
+    try {
+      const data = await convex.mutation(convexApi.accounts.loginOrCreate, {
+        username,
+        passwordHash: passwordHash(username, password),
+      })
+      await convex.mutation(convexApi.cards.seedForUser, { token: data.access_token })
+      send(res, 200, data)
+    } catch (error) {
+      send(res, 401, { detail: error.message || 'Login failed' })
+    }
+    return true
+  }
+
+  if (path === 'auth/me') {
+    const token = authToken(req)
+    if (!token) {
+      send(res, 401, { detail: 'Not authenticated' })
+      return true
+    }
+    const user = await convex.query(convexApi.accounts.me, { token })
+    send(res, user ? 200 : 401, user || { detail: 'Not authenticated' })
+    return true
+  }
+
+  const token = authToken(req)
+  if (!token && ['collection', 'dashboard', 'settings'].includes(path)) {
+    send(res, 401, { detail: 'Not authenticated' })
+    return true
+  }
+
+  if (path === 'collection') {
+    if (req.method === 'GET') {
+      send(res, 200, await convex.query(convexApi.cards.collection, { token }))
+      return true
+    }
+  }
+
+  if (path.startsWith('collection/') && req.method === 'PUT') {
+    const body = JSON.parse(await readBody(req) || '{}')
+    await convex.mutation(convexApi.cards.updateCollectionItem, {
+      token,
+      id: path.split('/')[1],
+      quantity: Number(body.quantity || 1),
+      condition: body.condition || 'NM',
+      variant: body.variant || '',
+      purchase_price: body.purchase_price == null ? undefined : Number(body.purchase_price),
+    })
+    send(res, 200, { ok: true })
+    return true
+  }
+
+  if (path === 'dashboard') {
+    send(res, 200, await convex.query(convexApi.cards.dashboard, { token }))
+    return true
+  }
+
+  if (path === 'settings') {
+    send(res, 200, settings)
+    return true
+  }
+
+  return false
+}
+
+export default async function handler(req, res) {
   const url = new URL(req.url, 'https://pokedokiedex.vercel.app')
   const path = (url.searchParams.get('path') || '').replace(/\/$/, '')
+
+  if (await convexResponse(req, res, path)) return
 
   if (req.method === 'OPTIONS') return send(res, 200, {})
   if (req.method !== 'GET' && req.method !== 'POST' && req.method !== 'PUT') {
