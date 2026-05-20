@@ -272,7 +272,7 @@ function CollectionEditModal({ item, onClose }) {
   const [quantity, setQuantity] = useState(item.quantity)
   const [condition, setCondition] = useState(item.condition || 'NM')
   const [variant, setVariant] = useState(item.variant || '')
-  const [lang, setLang] = useState(item.lang || 'en')
+  const lang = 'en'
   const [price, setPrice] = useState(item.purchase_price ? String(item.purchase_price) : '')
   const [customImageUrl, setCustomImageUrl] = useState(card?.custom_image_url || '')
   const [savedCustomImageUrl, setSavedCustomImageUrl] = useState(card?.custom_image_url || '')
@@ -410,33 +410,6 @@ function CollectionEditModal({ item, onClose }) {
               </select>
             </div>
 
-            
-
-            <div>
-              <label className="text-xs text-text-muted mb-1.5 block">🌐 {t('lang.selectLabel')}</label>
-              <div className="flex gap-2">
-                {['de', 'en'].map(l => (
-                  <button
-                    key={l}
-                    type="button"
-                    onClick={() => setLang(l)}
-                    className={clsx(
-                      'flex-1 py-1.5 rounded-lg text-sm font-bold transition-all border',
-                      lang === l
-                        ? l === 'de'
-                          ? 'bg-yellow/20 text-yellow border-yellow/50'
-                          : l === 'en'
-                            ? 'bg-blue/20 text-blue-400 border-blue-400/50'
-                            : 'bg-bg-surface text-text-muted border-border hover:border-text-muted'
-                        : 'bg-bg-surface text-text-muted border-border hover:border-text-muted'
-                    )}
-                  >
-                    {l === 'de' ? `🇩🇪 ${t('lang.de_full')}` : `🇬🇧 ${t('lang.en_full')}`}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             <div>
               <label className="text-xs text-text-muted mb-1 block">{t('card.purchasePrice')}</label>
               <input
@@ -540,7 +513,7 @@ export default function Collection() {
   const [filterVariant, setFilterVariant] = useState('')
   const [filterSet, setFilterSet] = useState('')
   const [filterType, setFilterType] = useState('')
-  const [filterLang, setFilterLang] = useState('')
+  const filterLang = ''
   const [filterMinPrice, setFilterMinPrice] = useState('')
   const [filterMaxPrice, setFilterMaxPrice] = useState('')
   const [filterDuplicates, setFilterDuplicates] = useState(false)
@@ -623,7 +596,7 @@ export default function Collection() {
     return [...all].sort()
   }, [items])
 
-  const hasActiveFilters = filterRarity || filterCondition || filterVariant || filterSet || filterType || filterLang || filterMinPrice || filterMaxPrice || filterDuplicates || searchText
+  const hasActiveFilters = filterRarity || filterCondition || filterVariant || filterSet || filterType || filterMinPrice || filterMaxPrice || filterDuplicates || searchText
 
   const filtered = useMemo(() => {
     let result = items.filter(item => {
@@ -834,14 +807,6 @@ export default function Collection() {
               </select>
             </div>
             <div>
-              <label className="text-xs text-text-muted mb-1 block">{t('lang.filter')}</label>
-              <select className="select py-1.5 text-sm" value={filterLang} onChange={e => setFilterLang(e.target.value)}>
-                <option value="">{t('lang.all')}</option>
-                <option value="de">DE</option>
-                <option value="en">EN</option>
-              </select>
-            </div>
-            <div>
               <label className="text-xs text-text-muted mb-1 block">{t('collection.filterMinPrice')}</label>
               <input type="number" min="0" step="0.01" placeholder="0" value={filterMinPrice}
                 onChange={(e) => setFilterMinPrice(e.target.value)} className="input py-1.5 text-sm" />
@@ -933,15 +898,6 @@ export default function Collection() {
                             ✨ {item.variant}
                           </span>
                         )}
-                        {item.lang && (
-                          <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${
-                            item.lang === 'de'
-                              ? 'bg-yellow/20 text-yellow border border-yellow/30'
-                              : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                          }`}>
-                            {item.lang.toUpperCase()}
-                          </span>
-                        )}
                         <FallbackBadges card={card} compact />
                       </div>
                     </TiltBinderCard>
@@ -1014,15 +970,6 @@ export default function Collection() {
                                   {card?.is_custom && (
                                     <span className="text-xs bg-yellow/20 text-yellow px-1 rounded" title="Manual">✏️</span>
                                   )}
-                                  {item.lang && (
-                                    <span className={`text-[9px] font-black px-1 py-0.5 rounded leading-none ${
-                                      item.lang === 'de'
-                                        ? 'bg-yellow/20 text-yellow'
-                                        : 'bg-blue/20 text-blue-400'
-                                    }`}>
-                                      {item.lang.toUpperCase()}
-                                    </span>
-                                  )}
                                   <FallbackBadges card={card} compact />
                                 </div>
                                 {(() => {
@@ -1093,7 +1040,6 @@ export default function Collection() {
                   const pnl = item.purchase_price ? totalVal - buyTotal : null
 
                   const badges = []
-                  if (item.lang) badges.push({ label: item.lang.toUpperCase(), variant: item.lang === 'de' ? 'yellow' : 'blue' })
                   if (item.variant) badges.push({ label: item.variant, variant: 'purple' })
                   if (item.condition) badges.push({ label: item.condition, variant: item.condition === 'Mint' ? 'green' : item.condition === 'NM' ? 'blue' : 'yellow' })
                   if (item.quantity > 1) badges.push({ label: `×${item.quantity}`, variant: 'red' })

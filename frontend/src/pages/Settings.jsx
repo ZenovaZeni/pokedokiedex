@@ -522,7 +522,7 @@ export default function Settings() {
   }
 
   const currentLang = settings.language || 'de'
-  const currentCurrency = settings.currency || 'EUR'
+  const currentCurrency = settings.currency || 'USD'
   const currentPriceType = settings.price_primary || 'trend'
   const currentTcgdexSyncLanguages = settings.tcgdex_sync_languages || 'en,de'
   const crossLanguagePriceFallback = settings.cross_language_price_fallback !== 'false'
@@ -711,7 +711,6 @@ export default function Settings() {
                 <SelectControl
                   value={currentCurrency}
                   options={[
-                    { value: 'EUR', label: '€ EUR' },
                     { value: 'USD', label: '$ USD' },
                   ]}
                   onChange={handleCurrencyChange}

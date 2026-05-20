@@ -288,7 +288,7 @@ All settings are persisted in the database and edited in the Settings UI.
 | Setting | Default | Notes |
 |---------|---------|-------|
 | Language | `en` | `de`, `en`, `zh` |
-| Currency | `EUR` | Per-user |
+| Currency | `USD` | Per-user |
 | Primary Price | `trend` | Per-user |
 | Multi-User Mode | `false` | Admin-only toggle |
 | Theme | `default` | Stored in browser local storage |

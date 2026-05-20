@@ -28,8 +28,8 @@ def export_csv(
     # Header
     writer.writerow([
         "Card ID", "Name", "Set", "Number", "Rarity",
-        "Quantity", "Condition", "Purchase Price (€)",
-        "Current Market Price (€)", "Total Value (€)",
+        "Quantity", "Condition", "Purchase Price ($)",
+        "Current Market Price ($)", "Total Value ($)",
         "Added At"
     ])
 
@@ -111,7 +111,7 @@ def export_pdf(
         story.append(Spacer(1, 10*mm))
 
         # Table
-        headers = ["Name", "Set", "No.", "Rarity", "Qty", "Condition", "Buy €", "Market €", "Value €"]
+        headers = ["Name", "Set", "No.", "Rarity", "Qty", "Condition", "Buy $", "Market $", "Value $"]
         data = [headers]
 
         total_value = 0
@@ -130,13 +130,13 @@ def export_pdf(
                 (card.rarity or "-")[:15],
                 str(item.quantity),
                 item.condition,
-                f"€{item.purchase_price:.2f}" if item.purchase_price else "-",
-                f"€{card.price_market:.2f}" if card.price_market else "-",
-                f"€{val:.2f}",
+                f"${item.purchase_price:.2f}" if item.purchase_price else "-",
+                f"${card.price_market:.2f}" if card.price_market else "-",
+                f"${val:.2f}",
             ])
 
         # Summary row
-        data.append(["", "", "", "", "", "", "", "TOTAL:", f"€{total_value:.2f}"])
+        data.append(["", "", "", "", "", "", "", "TOTAL:", f"${total_value:.2f}"])
 
         col_widths = [100, 80, 30, 80, 25, 50, 45, 55, 55]
         table = Table(data, colWidths=col_widths)

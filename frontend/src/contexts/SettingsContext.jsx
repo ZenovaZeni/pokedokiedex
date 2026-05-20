@@ -7,6 +7,7 @@ const translations = { de, en, zh }
 
 const DEFAULT_SETTINGS = {
   language: 'en',
+  currency: 'USD',
   price_display: '["trend", "avg1", "avg7", "avg30", "low"]',
   price_primary: 'trend',
   tcgdex_sync_languages: 'en,de',
@@ -40,7 +41,7 @@ export function SettingsProvider({ children }) {
 
   // Fetch exchange rate whenever currency changes to USD
   useEffect(() => {
-    const curr = settings.currency || 'EUR'
+    const curr = settings.currency || 'USD'
     if (curr === 'USD') {
       fetch('https://api.frankfurter.app/latest?from=EUR&to=USD')
         .then(r => r.json())
@@ -113,7 +114,7 @@ export function SettingsProvider({ children }) {
     return settings.price_primary || 'trend'
   }, [settings.price_primary])
 
-  const currency = settings.currency || 'EUR'
+  const currency = settings.currency || 'USD'
   const currencySymbol = currency === 'USD' ? '$' : '€'
 
   const formatPrice = useCallback((eurAmount) => {

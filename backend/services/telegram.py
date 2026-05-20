@@ -82,8 +82,8 @@ def send_price_alert(card_name: str, current_price: float, threshold: float, ale
     text = (
         f"{emoji} <b>Pokemon TCG Price Alert</b>\n\n"
         f"🃏 <b>{card_name}</b>\n"
-        f"Current price: <b>€{current_price:.2f}</b>\n"
-        f"Alert threshold ({direction}): <b>€{threshold:.2f}</b>\n\n"
+        f"Current price: <b>${current_price:.2f}</b>\n"
+        f"Alert threshold ({direction}): <b>${threshold:.2f}</b>\n\n"
         f"Check your collection! 🎯"
     )
     return send_message(text, db=db, user_id=user_id)

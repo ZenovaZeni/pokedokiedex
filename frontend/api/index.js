@@ -1,16 +1,16 @@
 const sampleCard = {
-  id: 'sv3pt5-25_en',
-  tcg_card_id: 'sv3pt5-25',
+  id: 'base1-58_en',
+  tcg_card_id: 'base1-58',
   name: 'Pikachu',
-  set_id: 'sv3pt5',
-  number: '25',
+  set_id: 'base1',
+  number: '58',
   rarity: 'Common',
   types: ['Lightning'],
   supertype: 'Pokemon',
   hp: '60',
   artist: 'Mitsuhiro Arita',
-  images_small: 'https://assets.tcgdex.net/en/sv/sv3pt5/25/low.webp',
-  images_large: 'https://assets.tcgdex.net/en/sv/sv3pt5/25/high.webp',
+  images_small: 'https://assets.tcgdex.net/en/base/base1/58/low.webp',
+  images_large: 'https://assets.tcgdex.net/en/base/base1/58/high.webp',
   lang: 'en',
   price_market: 1.25,
   price_low: 0.42,
@@ -21,12 +21,12 @@ const sampleCard = {
   price_avg7: 1.28,
   price_avg30: 1.35,
   set_ref: {
-    id: 'sv3pt5_en',
-    tcg_set_id: 'sv3pt5',
-    name: '151',
-    series: 'Scarlet & Violet',
-    images_logo: 'https://assets.tcgdex.net/en/sv/sv3pt5/logo.webp',
-    images_symbol: 'https://assets.tcgdex.net/univ/sv/sv3pt5/symbol.webp',
+    id: 'base1_en',
+    tcg_set_id: 'base1',
+    name: 'Base Set',
+    series: 'Base',
+    images_logo: 'https://assets.tcgdex.net/en/base/base1/logo.webp',
+    images_symbol: 'https://assets.tcgdex.net/univ/base/base1/symbol.webp',
   },
 }
 
@@ -46,7 +46,7 @@ const sampleCollection = [
 
 const settings = {
   language: 'en',
-  currency: 'EUR',
+  currency: 'USD',
   price_primary: 'trend',
   price_display: '["trend", "avg1", "avg7", "avg30", "low"]',
   multi_user_mode: 'false',
@@ -85,6 +85,12 @@ export default function handler(req, res) {
 
   if (path === 'settings') return send(res, 200, settings)
   if (path.startsWith('settings/')) return send(res, 200, { key: path.split('/').pop(), value: '' })
+  if (path.startsWith('images/card/')) {
+    const size = path.endsWith('/large') ? 'high' : 'low'
+    res.statusCode = 302
+    res.setHeader('location', `https://assets.tcgdex.net/en/base/base1/58/${size}.webp`)
+    return res.end()
+  }
 
   if (path === 'dashboard') {
     return send(res, 200, {

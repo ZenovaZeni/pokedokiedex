@@ -33,7 +33,7 @@ DEFAULT_SETTINGS = {
     "price_alerts_enabled": "false",
     "price_alert_threshold": "10",
     "language": "de",
-    "currency": "EUR",
+    "currency": "USD",
     "price_primary": "trend",
     "price_display": '["trend", "avg1", "avg7", "avg30", "low"]',
     "tcgdex_sync_languages": "en,de",

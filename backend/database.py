@@ -26,6 +26,7 @@ def get_db():
 
 DEFAULT_SETTINGS = {
     "language": "en",
+    "currency": "USD",
     "price_display": '["trend", "avg1", "avg7", "avg30", "low"]',
     "price_primary": "trend",
     "multi_user_mode": "false",

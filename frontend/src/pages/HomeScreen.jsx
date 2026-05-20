@@ -42,7 +42,7 @@ function ChartTooltip({ active, payload, label }) {
       style={{ background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.12)' }}>
       <p className="text-text-muted mb-1">{label}</p>
       <p className="font-black" style={{ color: '#f5c842' }}>
-        €{Number(payload[0].value).toFixed(2)}
+        ${Number(payload[0].value).toFixed(2)}
       </p>
     </div>
   )
