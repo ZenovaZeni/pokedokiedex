@@ -1,6 +1,6 @@
 import { useState, useMemo, useId, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Trash2, Check, X, Filter, SortAsc, Download, Upload, ChevronUp, ChevronDown, Search, PenLine, Grid2X2, List, Library, BookOpen, Heart } from 'lucide-react'
+import { Trash2, Check, X, Filter, SortAsc, Download, Upload, ChevronUp, ChevronDown, Search, PenLine, Grid2X2, List, Library, BookOpen, Heart, RotateCcw } from 'lucide-react'
 import { getCollection, updateCollectionItem, updateCardCustomImage, removeFromCollection, importCollectionCsv, exportCSV, exportPDF, getSets } from '../api/client'
 import { CustomCardModal } from '../components/CardItem'
 import { useSettings } from '../contexts/SettingsContext'
@@ -277,6 +277,7 @@ function CollectionEditModal({ item, onClose }) {
   const [customImageUrl, setCustomImageUrl] = useState(card?.custom_image_url || '')
   const [savedCustomImageUrl, setSavedCustomImageUrl] = useState(card?.custom_image_url || '')
   const [customImageVersion, setCustomImageVersion] = useState(0)
+  const [showBack, setShowBack] = useState(false)
   const customImageInputId = useId()
 
   const hasApiImage = Boolean(card?.images?.large || card?.images_large || card?.images?.small || card?.images_small || card?.image)
@@ -285,6 +286,7 @@ function CollectionEditModal({ item, onClose }) {
     ? `${cardImageUrl(item.card_id, 'large')}?v=${customImageVersion}`
     : null
   const cardImage = customImageProxyUrl || resolveCardImageUrl(card, 'large')
+  const displayImage = showBack ? '/cardback.jpg' : cardImage
 
   const updateMutation = useMutation({
     mutationFn: () => updateCollectionItem(item.id, {
@@ -348,7 +350,7 @@ function CollectionEditModal({ item, onClose }) {
         className={[
           'fixed bottom-0 left-0 right-0 rounded-t-2xl max-h-[90dvh] overflow-y-auto',
           'bg-bg-surface border-t border-border more-sheet-enter',
-          'md:static md:rounded-2xl md:border md:max-w-lg md:w-full md:max-h-[85vh] md:animate-none',
+          'md:static md:rounded-2xl md:border md:max-w-5xl md:w-[min(94vw,72rem)] md:max-h-[88vh] md:animate-none',
         ].join(' ')}
         onClick={e => e.stopPropagation()}
       >
@@ -358,9 +360,21 @@ function CollectionEditModal({ item, onClose }) {
 
         <div className="p-5">
           {/* Header */}
-          <div className="flex items-start gap-4 mb-5">
-            {cardImage && (
-              <img src={cardImage} alt={card?.name} className="w-20 rounded-xl shadow-lg flex-shrink-0" />
+          <div className="flex flex-col items-stretch gap-4 mb-5 md:grid md:grid-cols-[20rem_1fr] md:items-start">
+            {displayImage && (
+              <button
+                type="button"
+                onClick={() => setShowBack(value => !value)}
+                className="group relative mx-auto block w-full max-w-[330px] flex-shrink-0 md:max-w-none"
+                aria-label={showBack ? t('card.showFront') : t('card.showBack')}
+              >
+                <img src={displayImage} alt={showBack ? t('card.cardBack') : card?.name} className="w-full rounded-xl shadow-2xl" />
+                <HoloOverlay variant={!showBack ? item.variant : ''} />
+                <span className="absolute bottom-2 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full border border-white/15 bg-black/70 px-2 py-1 text-[10px] font-bold text-white backdrop-blur">
+                  <RotateCcw size={12} />
+                  {showBack ? t('card.showFront') : t('card.showBack')}
+                </span>
+              </button>
             )}
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2">
