@@ -653,16 +653,16 @@ export function CardModal({ card, onClose, onEdit, defaultLang = 'en' }) {
       <div className={[
         'fixed bottom-0 left-0 right-0 rounded-t-2xl max-h-[90dvh] overflow-y-auto',
         'bg-bg-surface border-t border-border more-sheet-enter',
-        'md:static md:rounded-2xl md:border md:max-w-2xl md:w-full md:max-h-[85vh] md:animate-none',
+        'md:static md:rounded-2xl md:border md:max-w-5xl md:w-[min(94vw,72rem)] md:max-h-[88vh] md:animate-none',
       ].join(' ')} onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-center pt-3 pb-1 md:hidden">
           <div className="w-10 h-1 bg-border rounded-full" />
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 p-4 sm:p-6">
-          <div className="flex-shrink-0">
-            <div className="flex sm:block items-start gap-4">
-              <div className="w-32 sm:w-48 flex-shrink-0">
+        <div className="flex flex-col gap-5 p-4 sm:p-6 md:flex-row md:gap-7">
+          <div className="flex-shrink-0 md:w-80">
+            <div className="flex flex-col items-stretch gap-4">
+              <div className="mx-auto w-full max-w-[330px] flex-shrink-0 md:max-w-none">
                 {displayImage ? (
                   <button
                     type="button"
@@ -687,7 +687,7 @@ export function CardModal({ card, onClose, onEdit, defaultLang = 'en' }) {
                 )}
               </div>
 
-              <div className="sm:hidden flex-1 min-w-0 pt-1">
+              <div className="md:hidden min-w-0 pt-1">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <h2 className="text-base font-bold text-text-primary break-words">{card.name}</h2>
@@ -710,7 +710,7 @@ export function CardModal({ card, onClose, onEdit, defaultLang = 'en' }) {
           </div>
 
           <div className="flex-1 min-w-0 space-y-4">
-            <div className="hidden sm:flex items-start justify-between gap-2">
+            <div className="hidden md:flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <h2 className="text-xl font-bold text-text-primary break-words">{card.name}</h2>
                 {setName && <p className="text-sm text-text-secondary">
@@ -739,7 +739,7 @@ export function CardModal({ card, onClose, onEdit, defaultLang = 'en' }) {
 
             <div className="grid grid-cols-2 gap-3 text-sm">
               {card.rarity && (
-                <div className="hidden sm:block">
+                <div className="hidden md:block">
                   <span className="text-text-muted">{t('card.rarity')}</span>
                   <p className="text-text-primary font-medium">{card.rarity}</p>
                 </div>
