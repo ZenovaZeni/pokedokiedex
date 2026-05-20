@@ -1,7 +1,7 @@
 import { useState, useEffect, useId, memo } from 'react'
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
-import { Plus, Check, Heart, BookOpen, X, PenLine, Pencil,  Trash2 } from 'lucide-react'
+import { Plus, Check, Heart, BookOpen, X, PenLine, Pencil, Trash2, RotateCcw } from 'lucide-react'
 import { addToCollection, addToWishlist, createCustomCard, updateCustomCard, updateCardCustomImage, deleteCustomCard, getSets, getPriceHistory } from '../api/client'
 import { useSettings } from '../contexts/SettingsContext'
 import PeriodSelector, { CARD_PERIODS, PERIOD_PRICE_FIELD } from './PeriodSelector'
@@ -523,6 +523,7 @@ export function CardModal({ card, onClose, onEdit, defaultLang = 'en' }) {
   const [variant, setVariant] = useState(() => getDefaultVariant(card))
   const [purchasePrice, setPurchasePrice] = useState('')
   const [modalPeriod, setModalPeriod] = useState('total')
+  const [showBack, setShowBack] = useState(false)
   const [resolvedCardId, setResolvedCardId] = useState(card.id)
   const [customImageUrl, setCustomImageUrl] = useState(card.custom_image_url || '')
   const [savedCustomImageUrl, setSavedCustomImageUrl] = useState(card.custom_image_url || '')
@@ -563,6 +564,11 @@ export function CardModal({ card, onClose, onEdit, defaultLang = 'en' }) {
     || resolveCardImageUrl(card, 'large')
     || resolveCardImageUrl(card)
   const setName = card.set?.name || card.set_ref?.name
+  const displayImage = showBack ? '/cardback.jpg' : cardImage
+  const attacks = Array.isArray(card.attacks) ? card.attacks : []
+  const weaknesses = Array.isArray(card.weaknesses) ? card.weaknesses : []
+  const retreatCost = Array.isArray(card.retreatCost) ? card.retreatCost : []
+  const rules = Array.isArray(card.rules) ? card.rules : []
 
   const addMutation = useMutation({
     mutationFn: (data) => addToCollection(data),
@@ -654,9 +660,24 @@ export function CardModal({ card, onClose, onEdit, defaultLang = 'en' }) {
         <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 p-4 sm:p-6">
           <div className="flex-shrink-0">
             <div className="flex sm:block items-start gap-4">
-              <div className="w-28 sm:w-48 flex-shrink-0">
-                {cardImage ? (
-                  <img src={cardImage} alt={card.name} className="w-full rounded-xl shadow-2xl" />
+              <div className="w-32 sm:w-48 flex-shrink-0">
+                {displayImage ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowBack(value => !value)}
+                    className="group relative block w-full text-left"
+                    aria-label={showBack ? t('card.showFront') : t('card.showBack')}
+                  >
+                    <img
+                      src={displayImage}
+                      alt={showBack ? t('card.cardBack') : card.name}
+                      className="w-full rounded-xl shadow-2xl transition-transform duration-300 group-active:scale-[0.98]"
+                    />
+                    <span className="absolute bottom-2 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full border border-white/15 bg-black/70 px-2 py-1 text-[10px] font-bold text-white backdrop-blur">
+                      <RotateCcw size={12} />
+                      {showBack ? t('card.showFront') : t('card.showBack')}
+                    </span>
+                  </button>
                 ) : (
                   <div className="w-full aspect-[2.5/3.5] bg-bg-card rounded-xl flex items-center justify-center text-text-muted text-sm">
                     {t('common.noImage')}
@@ -728,6 +749,63 @@ export function CardModal({ card, onClose, onEdit, defaultLang = 'en' }) {
                 </div>
               )}
             </div>
+
+            {(card.description || card.flavorText || rules.length > 0 || attacks.length > 0 || weaknesses.length > 0 || retreatCost.length > 0) && (
+              <div className="bg-bg-card rounded-xl p-3 space-y-3">
+                <p className="text-xs text-text-muted font-medium uppercase tracking-wide">
+                  {t('card.cardDetails')}
+                </p>
+                {(card.description || card.flavorText) && (
+                  <p className="text-sm leading-6 text-text-secondary">
+                    {card.description || card.flavorText}
+                  </p>
+                )}
+                {rules.length > 0 && (
+                  <div className="space-y-1">
+                    {rules.map((rule, index) => (
+                      <p key={`${rule}-${index}`} className="text-xs leading-5 text-text-secondary">{rule}</p>
+                    ))}
+                  </div>
+                )}
+                {attacks.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-bold text-text-primary">{t('card.attacks')}</p>
+                    {attacks.slice(0, 3).map((attack, index) => (
+                      <div key={`${attack.name || 'attack'}-${index}`} className="rounded-lg border border-border bg-bg-primary/60 p-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-sm font-bold text-text-primary">{attack.name}</p>
+                          {attack.damage && <span className="text-sm font-black text-brand-red">{attack.damage}</span>}
+                        </div>
+                        {attack.cost?.length > 0 && (
+                          <p className="mt-1 text-[11px] text-yellow">{attack.cost.join(' / ')}</p>
+                        )}
+                        {attack.effect && (
+                          <p className="mt-1 text-xs leading-5 text-text-secondary">{attack.effect}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {(weaknesses.length > 0 || retreatCost.length > 0) && (
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    {weaknesses.length > 0 && (
+                      <div>
+                        <span className="text-text-muted">{t('card.weakness')}</span>
+                        <p className="font-bold text-text-primary">
+                          {weaknesses.map(item => `${item.type || item} ${item.value || ''}`.trim()).join(', ')}
+                        </p>
+                      </div>
+                    )}
+                    {retreatCost.length > 0 && (
+                      <div>
+                        <span className="text-text-muted">{t('card.retreat')}</span>
+                        <p className="font-bold text-text-primary">{retreatCost.join(', ')}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             {displayedPrices.length > 0 && (
               <div className="bg-bg-card rounded-xl p-3 space-y-3">

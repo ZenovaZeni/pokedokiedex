@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { Camera, Upload, X, Check, Loader2, RefreshCw, Plus } from 'lucide-react'
+import { Camera, Upload, X, Check, Loader2, RefreshCw, Plus, Eye, RotateCcw } from 'lucide-react'
 import { recognizeCard, addToCollection, searchCards } from '../api/client'
 import { useQueryClient } from '@tanstack/react-query'
 import { useSettings } from '../contexts/SettingsContext'
@@ -94,8 +94,11 @@ function ScanAddModal({ match, onClose, onAdded }) {
   const [condition, setCondition] = useState('NM')
   const [variant, setVariant] = useState(() => getDefaultVariant(match))
   const [purchasePrice, setPurchasePrice] = useState('')
+  const [showBack, setShowBack] = useState(false)
   const [adding, setAdding] = useState(false)
   const queryClient = useQueryClient()
+  const displayImage = showBack ? '/cardback.jpg' : match.image
+  const attacks = Array.isArray(match.attacks) ? match.attacks : []
 
   const handleAdd = async () => {
     setAdding(true)
@@ -135,20 +138,55 @@ function ScanAddModal({ match, onClose, onAdded }) {
         </div>
         <div className="p-5">
           {/* Card Info */}
-          <div className="flex items-center gap-3 mb-4">
-            {match.image && (
-              <img src={match.image} alt={match.name}
-                className="w-16 h-22 object-cover rounded-xl border border-white/10 flex-shrink-0" />
+          <div className="flex items-start gap-3 mb-4">
+            {displayImage && (
+              <button
+                type="button"
+                onClick={() => setShowBack(value => !value)}
+                className="relative w-20 flex-shrink-0"
+                aria-label={showBack ? t('card.showFront') : t('card.showBack')}
+              >
+                <img src={displayImage} alt={showBack ? t('card.cardBack') : match.name}
+                  className="w-full object-cover rounded-xl border border-white/10 shadow-xl" />
+                <span className="absolute bottom-1 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full bg-black/70 px-1.5 py-0.5 text-[9px] font-bold text-white">
+                  <RotateCcw size={10} />
+                  {showBack ? 'Front' : 'Back'}
+                </span>
+              </button>
             )}
             <div className="flex-1 min-w-0">
               <p className="font-bold text-white text-base truncate">{match.name}</p>
               <p className="text-xs font-mono text-brand-red/80 font-semibold">{`${(match.set_abbreviation || '').toUpperCase()} ${match.number || ''}`.trim()}</p>
               {match.rarity && <p className="text-[11px] text-text-muted">{match.rarity}</p>}
+              {(match.supertype || match.types || match.hp || match.artist) && (
+                <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] text-text-secondary">
+                  {(match.supertype || match.types) && <span>{match.supertype}{match.types ? ` (${match.types.join(', ')})` : ''}</span>}
+                  {match.hp && <span>HP {match.hp}</span>}
+                  {match.artist && <span className="col-span-2 truncate">Artist: {match.artist}</span>}
+                </div>
+              )}
             </div>
             <button onClick={onClose} className="text-text-muted hover:text-text-primary p-1 flex-shrink-0">
               <X size={18} />
             </button>
           </div>
+
+          {attacks.length > 0 && (
+            <div className="mb-4 rounded-xl border border-border bg-bg-card p-3">
+              <p className="mb-2 text-xs font-bold uppercase tracking-wide text-text-muted">{t('card.attacks')}</p>
+              <div className="space-y-2">
+                {attacks.slice(0, 2).map((attack, index) => (
+                  <div key={`${attack.name || 'attack'}-${index}`} className="text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-bold text-white">{attack.name}</span>
+                      {attack.damage && <span className="font-black text-brand-red">{attack.damage}</span>}
+                    </div>
+                    {attack.effect && <p className="mt-1 leading-5 text-text-secondary">{attack.effect}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="space-y-3">
             {/* Quantity + Condition */}
@@ -373,11 +411,11 @@ export default function CardScanner({ isOpen, onClose, onCardSelected }) {
                                 <span className="text-[9px] text-text-muted text-center p-1">{match.name}</span>
                               </div>
                           }
-                          {/* Hover overlay with add button */}
+                        {/* Hover overlay with details button */}
                           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 rounded-xl">
                             <div className="w-7 h-7 rounded-full flex items-center justify-center"
                               style={{ background: '#e3000b', boxShadow: '0 0 12px rgba(227,0,11,0.5)' }}>
-                              <Plus size={14} className="text-white" />
+                              <Eye size={14} className="text-white" />
                             </div>
                           </div>
                         </div>

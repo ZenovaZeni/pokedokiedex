@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
-import { Search, X, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, SortAsc, Hash, PenLine, SlidersHorizontal, Camera, CheckSquare, Plus, Check, Sparkles, TrendingUp } from 'lucide-react'
+import { Search, X, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, SortAsc, Hash, PenLine, SlidersHorizontal, Camera, CheckSquare, Plus, Check, Sparkles, TrendingUp, Eye } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { searchCards, getSets, getCustomCards, bulkAddToCollection } from '../api/client'
 import { CardItem, CustomCardModal, CardModal } from '../components/CardItem'
@@ -727,6 +727,7 @@ export default function CardSearch() {
               {data.total_count?.toLocaleString()} {t('cardSearch.results')}
               {isFetching && <span className="ml-2 text-text-muted">{t('common.updating')}</span>}
             </p>
+            <p className="text-xs text-text-muted">{t('cardSearch.tapForDetails')}</p>
             {totalPages > 1 && (
               <div className="flex items-center gap-2">
                 <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="btn-ghost py-1.5 px-2 disabled:opacity-50">
@@ -768,6 +769,14 @@ export default function CardSearch() {
                             <span className="text-[10px] text-text-muted text-center leading-tight">{card.name}</span>
                           </div>
                       }
+                      {!selectMode && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all group-hover:bg-black/35 group-hover:opacity-100">
+                          <div className="flex items-center gap-1.5 rounded-full border border-white/15 bg-bg-surface/95 px-3 py-1.5 text-[11px] font-bold text-white shadow-glow">
+                            <Eye size={13} />
+                            {t('cardSearch.viewDetails')}
+                          </div>
+                        </div>
+                      )}
                     </div>
                     {card.rarity?.toLowerCase().includes('holo') && (
                       <div className="absolute inset-0 rounded-xl pointer-events-none card-holo" />
