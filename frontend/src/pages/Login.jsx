@@ -182,7 +182,10 @@ export default function Login() {
             </div>
 
             <p className="mt-5 text-center text-xs leading-5 text-text-muted">
-              Passwords are hashed before storage. Use a unique password for this app.
+              Passwords are hashed before storage. Use a unique password for this app.{' '}
+              <Link to="/legal" className="font-semibold text-brand-red transition-opacity hover:opacity-80">
+                About / Legal
+              </Link>
             </p>
           </form>
         </section>

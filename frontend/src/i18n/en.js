@@ -14,6 +14,7 @@ const en = {
     achievements: 'Achievements',
     products: 'Products',
     settings: 'Settings',
+    legal: 'Legal',
     cards: 'Cards',
     value: 'Value',
     more: 'More',

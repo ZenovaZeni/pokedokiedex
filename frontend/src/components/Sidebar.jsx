@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   LayoutDashboard, Search, Library, Grid2X2, Heart,
-  BookOpen, BarChart3, ShoppingBag, Settings, Zap, LogOut
+  BookOpen, BarChart3, ShoppingBag, Settings, Zap, LogOut, Scale
 } from 'lucide-react'
 import { getDashboard, getCustomMatches } from '../api/client'
 import { useSettings } from '../contexts/SettingsContext'
@@ -23,6 +23,7 @@ export default function Sidebar() {
     { to: '/analytics',  icon: BarChart3,         label: t('nav.analytics') },
     { to: '/products',   icon: ShoppingBag,       label: t('nav.products') },
     { to: '/settings',   icon: Settings,          label: t('nav.settings') },
+    { to: '/legal',      icon: Scale,             label: t('nav.legal') },
   ]
 
   const { data } = useQuery({

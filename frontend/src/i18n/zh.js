@@ -14,6 +14,7 @@ const zh = {
     achievements: '成就',
     products: '产品',
     settings: '设置',
+    legal: 'Legal',
     cards: '卡牌',
     value: '价值',
     more: '更多',

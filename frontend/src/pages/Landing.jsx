@@ -104,6 +104,13 @@ export default function Landing() {
             </div>
           ))}
         </section>
+
+        <footer className="flex flex-col gap-2 border-t border-border py-5 text-xs text-text-muted sm:flex-row sm:items-center sm:justify-between">
+          <span>Unofficial collector tool. Prices are estimates.</span>
+          <Link to="/legal" className="font-semibold text-brand-red transition-opacity hover:opacity-80">
+            About / Legal
+          </Link>
+        </footer>
       </div>
     </main>
   )

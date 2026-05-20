@@ -14,6 +14,7 @@ const de = {
     achievements: 'Abzeichen',
     products: 'Produkte',
     settings: 'Einstellungen',
+    legal: 'Legal',
     cards: 'Karten',
     value: 'Wert',
     more: 'Mehr',

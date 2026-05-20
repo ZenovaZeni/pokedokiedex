@@ -3,7 +3,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   Search, Library, Grid2X2, MoreHorizontal,
-  Heart, BookOpen, BarChart3, ShoppingBag, Settings, X, Zap, LogOut, Trophy, Award
+  Heart, BookOpen, BarChart3, ShoppingBag, Settings, X, Zap, LogOut, Trophy, Award, Scale
 } from 'lucide-react'
 import { getCustomMatches } from '../api/client'
 import { useAuth } from '../contexts/AuthContext'
@@ -41,6 +41,7 @@ export default function BottomNav() {
     { to: '/leaderboard', icon: Trophy, label: t('nav.leaderboard') },
     { to: '/achievements', icon: Award, label: t('nav.achievements') },
     { to: '/settings',   icon: Settings,   label: t('nav.settings') },
+    { to: '/legal', icon: Scale, label: t('nav.legal') },
     ...(pendingCount > 0
       ? [{ to: '/migration', icon: Zap, label: t('migration.title'), badge: pendingCount }]
       : []),

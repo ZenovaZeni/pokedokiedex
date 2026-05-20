@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { RefreshCw, Download, Upload, Plus, Pencil, Trash2, User, UserCheck, UserX, Zap } from 'lucide-react'
 import {
@@ -680,15 +680,23 @@ export default function Settings() {
                   TCGdex ↗
                 </a>
               </SettingsRow>
-              <SettingsRow label={t('settings.sourceCode')} description={t('settings.sourceCodeDesc')} last>
+              <SettingsRow label={t('settings.sourceCode')} description={t('settings.sourceCodeDesc')}>
                 <a
-                  href="https://github.com/Git-Romer/pokecollector"
+                  href="https://github.com/ZenovaZeni/pokedokiedex"
                   target="_blank"
                   rel="noreferrer"
                   className="text-xs font-semibold text-brand-red hover:opacity-80 transition-opacity"
                 >
                   GitHub ↗
                 </a>
+              </SettingsRow>
+              <SettingsRow label="About / Legal" description="License, source, unofficial status, and price estimate notice" last>
+                <Link
+                  to="/legal"
+                  className="text-xs font-semibold text-brand-red hover:opacity-80 transition-opacity"
+                >
+                  Open
+                </Link>
               </SettingsRow>
             </SettingsCard>
             <div className="text-center mt-4 mb-2">

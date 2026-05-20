@@ -21,6 +21,7 @@ import Settings from './pages/Settings'
 import CardMigration from './pages/CardMigration'
 import Login from './pages/Login'
 import Landing from './pages/Landing'
+import AboutLegal from './pages/AboutLegal'
 import Leaderboard from './pages/Leaderboard'
 import Compare from './pages/Compare'
 import Achievements from './pages/Achievements'
@@ -155,6 +156,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/legal" element={<AboutLegal />} />
             <Route path="/*" element={<ProtectedRoutes />} />
           </Routes>
         </BrowserRouter>
