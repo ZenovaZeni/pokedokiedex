@@ -266,6 +266,12 @@ async function readBody(req) {
   return Buffer.concat(chunks).toString('utf8')
 }
 
+async function readRawBody(req) {
+  const chunks = []
+  for await (const chunk of req) chunks.push(chunk)
+  return Buffer.concat(chunks)
+}
+
 function passwordHash(username, password) {
   const normalizedUsername = username.trim().toLowerCase()
   return pbkdf2Sync(password, `pokedokiedex-v2:${normalizedUsername}`, 120000, 32, 'sha256').toString('hex')
@@ -332,6 +338,304 @@ async function fetchCardForCollection(cardId) {
   const response = await fetch(`https://api.tcgdex.net/v2/en/cards/${encodeURIComponent(id)}`)
   if (!response.ok) throw new Error('Card was not found in the US card catalog.')
   return normalizeTcgdexCard(await response.json())
+}
+
+async function tcgdexJson(path, params = {}) {
+  const url = new URL(`https://api.tcgdex.net/v2/en/${path.replace(/^\//, '')}`)
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== '') url.searchParams.set(key, String(value))
+  }
+  const response = await fetch(url)
+  if (!response.ok) throw new Error(`TCGdex request failed: ${response.status}`)
+  return await response.json()
+}
+
+function withWebp(url) {
+  if (!url) return ''
+  return /\.(webp|png|jpe?g)$/i.test(url) ? url : `${url}.webp`
+}
+
+function normalizeSet(set) {
+  const total = set.cardCount?.total ?? set.total ?? 0
+  return {
+    id: `${set.id}_en`,
+    tcg_set_id: set.id,
+    name: set.name,
+    series: set.serie?.name || set.series || '',
+    abbreviation: set.abbreviation?.official || '',
+    total,
+    release_date: set.releaseDate || '',
+    images_logo: withWebp(set.logo),
+    images_symbol: withWebp(set.symbol),
+    lang: 'en',
+    owned_count: 0,
+  }
+}
+
+async function normalizeCardSearchResult(card) {
+  if (card?.pricing || card?.category || card?.set?.cardCount) return normalizeTcgdexCard(card)
+  try {
+    return normalizeTcgdexCard(await tcgdexJson(`cards/${encodeURIComponent(card.id)}`))
+  } catch {
+    const image = card.image || ''
+    return {
+      id: `${card.id}_en`,
+      tcg_card_id: card.id,
+      name: card.name,
+      set_id: card.id?.includes('-') ? card.id.split('-').slice(0, -1).join('-') : '',
+      number: card.localId || '',
+      localId: card.localId || '',
+      rarity: card.rarity || '',
+      types: [],
+      supertype: '',
+      hp: '',
+      artist: '',
+      images_small: image ? `${image}/low.webp` : '',
+      images_large: image ? `${image}/high.webp` : '',
+      image: image ? `${image}/low.webp` : '',
+      lang: 'en',
+      price_market: null,
+      price_low: null,
+      price_trend: null,
+      price_avg1: null,
+      price_avg7: null,
+      price_avg30: null,
+      set_ref: null,
+    }
+  }
+}
+
+function stripNumber(value = '') {
+  const match = String(value).match(/[A-Za-z0-9-]+/)
+  return match ? match[0].replace(/^0+/, '') || '0' : ''
+}
+
+async function searchTcgdexCards(url) {
+  const name = (url.searchParams.get('name') || '').trim()
+  const setId = (url.searchParams.get('set_id') || '').replace(/_en$/, '')
+  const type = url.searchParams.get('type') || ''
+  const rarity = (url.searchParams.get('rarity') || '').toLowerCase()
+  const artist = (url.searchParams.get('artist') || '').toLowerCase()
+  const page = Math.max(1, Number(url.searchParams.get('page') || 1))
+  const pageSize = Math.min(50, Math.max(1, Number(url.searchParams.get('page_size') || 20)))
+
+  let raw = []
+  const codeMatch = /^([A-Za-z]+\d*)\s+(\d+)$/i.exec(name)
+
+  if (setId) {
+    const set = await tcgdexJson(`sets/${encodeURIComponent(setId)}`)
+    raw = Array.isArray(set.cards) ? set.cards : []
+  } else if (codeMatch) {
+    const [, wantedSet, wantedNumber] = codeMatch
+    const sets = await tcgdexJson('sets')
+    const matchedSet = sets.find((set) => {
+      const official = set.abbreviation?.official || ''
+      return [set.id, official].some((candidate) => candidate.toLowerCase() === wantedSet.toLowerCase())
+    })
+    if (matchedSet) {
+      const set = await tcgdexJson(`sets/${encodeURIComponent(matchedSet.id)}`)
+      raw = (set.cards || []).filter((card) => stripNumber(card.localId) === stripNumber(wantedNumber))
+    }
+  } else if (name) {
+    raw = await tcgdexJson('cards', { name })
+  } else {
+    raw = []
+  }
+
+  if (type) raw = raw.filter((card) => (card.types || []).includes(type))
+  if (rarity) raw = raw.filter((card) => String(card.rarity || '').toLowerCase().includes(rarity))
+
+  const totalCount = raw.length
+  const pageRaw = raw.slice((page - 1) * pageSize, page * pageSize)
+  let cards = await Promise.all(pageRaw.map(normalizeCardSearchResult))
+  if (artist) cards = cards.filter((card) => String(card.artist || '').toLowerCase().includes(artist))
+
+  return {
+    data: cards,
+    total_count: totalCount,
+    page,
+    page_size: pageSize,
+  }
+}
+
+function multipartFile(buffer, contentType = '') {
+  const boundary = /boundary=(?:"([^"]+)"|([^;]+))/i.exec(contentType)?.[1]
+    || /boundary=(?:"([^"]+)"|([^;]+))/i.exec(contentType)?.[2]
+  if (!boundary) return null
+  const boundaryBytes = Buffer.from(`--${boundary}`)
+  const start = buffer.indexOf(boundaryBytes)
+  if (start < 0) return null
+  const headerStart = buffer.indexOf(Buffer.from('\r\n'), start) + 2
+  const headerEnd = buffer.indexOf(Buffer.from('\r\n\r\n'), headerStart)
+  if (headerEnd < 0) return null
+  const headers = buffer.slice(headerStart, headerEnd).toString('utf8')
+  const fileStart = headerEnd + 4
+  const nextBoundary = buffer.indexOf(Buffer.from(`\r\n--${boundary}`), fileStart)
+  if (nextBoundary < 0 || !/name="file"/i.test(headers)) return null
+  const mime = /content-type:\s*([^\r\n]+)/i.exec(headers)?.[1]?.trim() || 'image/jpeg'
+  return { bytes: buffer.slice(fileStart, nextBoundary), mime }
+}
+
+async function geminiRecognize(req) {
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY
+  if (!apiKey) {
+    const error = new Error('Card scanning needs a Gemini API key configured on Vercel before photo recognition can run.')
+    error.status = 503
+    error.code = 'SCANNER_NOT_CONFIGURED'
+    throw error
+  }
+
+  const body = await readRawBody(req)
+  const file = multipartFile(body, req.headers['content-type'] || '')
+  if (!file?.bytes?.length) {
+    const error = new Error('No card image was received.')
+    error.status = 400
+    throw error
+  }
+
+  const prompt = `Read this Pokemon trading card image. Return only JSON with:
+{"name":"English card name if visible","number":"printed collector number like 58/102 or null","set_hint":"set name or code if visible or null","language":"en"}`
+
+  const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent', {
+    method: 'POST',
+    headers: {
+      'x-goog-api-key': apiKey,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      contents: [{
+        parts: [
+          { text: prompt },
+          { inline_data: { mime_type: file.mime, data: file.bytes.toString('base64') } },
+        ],
+      }],
+    }),
+  })
+
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok) {
+    const error = new Error(data.error?.message || 'Photo recognition failed.')
+    error.status = response.status
+    throw error
+  }
+
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+  const jsonText = /\{[\s\S]*\}/.exec(text)?.[0]
+  const recognized = jsonText ? JSON.parse(jsonText) : {}
+  const query = recognized.name || recognized.set_hint || ''
+  if (!query) {
+    const error = new Error('The card name was not readable. Try a brighter photo or use smart search.')
+    error.status = 422
+    throw error
+  }
+
+  const searchUrl = new URL('https://pokedokiedex.vercel.app/api/cards/search')
+  searchUrl.searchParams.set('name', query)
+  searchUrl.searchParams.set('page_size', '12')
+  const result = await searchTcgdexCards(searchUrl)
+  const targetNumber = stripNumber(recognized.number)
+  const matches = result.data
+    .sort((a, b) => {
+      if (!targetNumber) return 0
+      const aMatch = stripNumber(a.number || a.localId) === targetNumber ? 0 : 1
+      const bMatch = stripNumber(b.number || b.localId) === targetNumber ? 0 : 1
+      return aMatch - bMatch
+    })
+    .slice(0, 8)
+    .map((card) => ({
+      ...card,
+      image: card.images_small,
+      set_abbreviation: card.set_ref?.abbreviation || card.set_id,
+      lang: 'en',
+      _lang: 'en',
+    }))
+
+  return {
+    recognized: { ...recognized, language: 'en' },
+    matches,
+  }
+}
+
+async function currentConvexCollection(req) {
+  const token = authToken(req)
+  const convex = convexClient()
+  if (!token || !convex) return []
+  try {
+    return await convex.query(convexApi.cards.collection, { token })
+  } catch {
+    return []
+  }
+}
+
+function roundProgress(cards) {
+  if (!cards.length) return 0
+  return Math.round((cards.filter((card) => card.owned).length / cards.length) * 1000) / 10
+}
+
+async function tcgdexResponse(req, res, path, url) {
+  try {
+    if (path === 'cards/search' && req.method === 'GET') {
+      send(res, 200, await searchTcgdexCards(url))
+      return true
+    }
+
+    if (path === 'cards/recognize' && req.method === 'POST') {
+      send(res, 200, await geminiRecognize(req))
+      return true
+    }
+
+    if (path === 'sets' && req.method === 'GET') {
+      const sets = await tcgdexJson('sets')
+      const collection = await currentConvexCollection(req)
+      const ownedBySet = new Map()
+      for (const item of collection) {
+        const setId = item.card?.set_id
+        if (!setId) continue
+        ownedBySet.set(setId, (ownedBySet.get(setId) || 0) + 1)
+      }
+      send(res, 200, sets.map((set) => ({
+        ...normalizeSet(set),
+        owned_count: ownedBySet.get(set.id) || 0,
+      })).reverse())
+      return true
+    }
+
+    const checklistMatch = /^sets\/([^/]+)\/checklist$/.exec(path)
+    if (checklistMatch && req.method === 'GET') {
+      const setId = checklistMatch[1].replace(/_en$/, '')
+      const set = await tcgdexJson(`sets/${encodeURIComponent(setId)}`)
+      const cards = await Promise.all((set.cards || []).map(normalizeCardSearchResult))
+      const collection = await currentConvexCollection(req)
+      const ownedMap = new Map(collection.map((item) => [item.card_id, item.quantity || 0]))
+      const checklist = cards.map((card) => ({
+        ...card,
+        owned: ownedMap.has(card.id),
+        quantity: ownedMap.get(card.id) || 0,
+      }))
+      send(res, 200, {
+        set: normalizeSet(set),
+        cards: checklist,
+        owned_count: checklist.filter((card) => card.owned).length,
+        total_count: checklist.length,
+        progress: roundProgress(checklist),
+      })
+      return true
+    }
+
+    const setMatch = /^sets\/([^/]+)$/.exec(path)
+    if (setMatch && req.method === 'GET') {
+      send(res, 200, normalizeSet(await tcgdexJson(`sets/${encodeURIComponent(setMatch[1].replace(/_en$/, ''))}`)))
+      return true
+    }
+  } catch (error) {
+    send(res, error.status || 502, {
+      detail: error.message || 'Card catalog request failed',
+      code: error.code || 'TCGDEX_REQUEST_FAILED',
+    })
+    return true
+  }
+
+  return false
 }
 
 async function convexResponse(req, res, path) {
@@ -494,6 +798,8 @@ export default async function handler(req, res) {
   if (await ebayResponse(req, res, path, url)) return
 
   if (await convexResponse(req, res, path)) return
+
+  if (await tcgdexResponse(req, res, path, url)) return
 
   if (req.method === 'OPTIONS') return send(res, 200, {})
   if (req.method !== 'GET' && req.method !== 'POST' && req.method !== 'PUT' && req.method !== 'DELETE') {

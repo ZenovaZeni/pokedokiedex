@@ -741,9 +741,9 @@ const en = {
     alignCard: 'Align card straight, well-lit',
     takePhoto: 'Take photo',
     uploadImage: 'Upload image',
-    aiHint: 'Recognition via Gemini AI — automatically detects German and English',
-    recognizing: 'Recognizing card…',
-    analyzing: 'Gemini is analyzing the image',
+    aiHint: 'Reads the card photo, then searches the US catalog for likely matches.',
+    recognizing: 'Recognizing card...',
+    analyzing: 'Checking the image and printed card text',
     detected: 'Detected',
     detectedLanguage: 'Language:',
     matches: 'Matches',
@@ -755,6 +755,7 @@ const en = {
     addedToCollection: 'added to collection',
     adding: 'Adding…',
     recognitionFailed: 'Card could not be recognized',
+    localOcrFallback: 'Trying free on-device text recognition...',
   },
 
   // Language filter / card language

@@ -1,19 +1,98 @@
 import { useState, useRef } from 'react'
 import { Camera, Upload, X, Check, Loader2, RefreshCw, Plus } from 'lucide-react'
-import { recognizeCard, addToCollection } from '../api/client'
+import { recognizeCard, addToCollection, searchCards } from '../api/client'
 import { useQueryClient } from '@tanstack/react-query'
 import { useSettings } from '../contexts/SettingsContext'
 import toast from 'react-hot-toast'
-import clsx from 'clsx'
 import { CARD_VARIANTS, getDefaultVariant } from '../utils/cardVariants'
 
+const SLASH_NUMBER_RE = /(\d{1,4})\s*\/\s*\d{1,4}/
+const CODE_NUMBER_RE = /\b([A-Za-z]{2,}\d*)\s+(\d{1,4})\b/
+
+function bestOcrQuery(text) {
+  const lines = text
+    .split(/\r?\n/)
+    .map(line => line.replace(/[^\w\s/'-]/g, ' ').replace(/\s+/g, ' ').trim())
+    .filter(line => line.length >= 2)
+
+  const slashNumber = SLASH_NUMBER_RE.exec(text)?.[1] || ''
+  const codeNumber = CODE_NUMBER_RE.exec(text)
+  const nameLine = lines.find(line => (
+    /[A-Za-z]{3,}/.test(line)
+    && !/\b(HP|TCG|TRAINER|ENERGY|BASIC|STAGE|ILLUS|WEAKNESS|RESISTANCE)\b/i.test(line)
+    && !SLASH_NUMBER_RE.test(line)
+  )) || ''
+
+  if (codeNumber) {
+    return {
+      query: `${codeNumber[1]} ${codeNumber[2]}`,
+      recognized: { name: nameLine || codeNumber[1], number: codeNumber[2] },
+    }
+  }
+
+  if (nameLine && slashNumber) {
+    return {
+      query: nameLine,
+      recognized: { name: nameLine, number: slashNumber },
+    }
+  }
+
+  return {
+    query: nameLine,
+    recognized: { name: nameLine || 'Card text', number: slashNumber || null },
+  }
+}
+
+async function recognizeWithLocalOcr(file) {
+  const { createWorker } = await import('tesseract.js')
+  const worker = await createWorker('eng')
+  try {
+    const { data } = await worker.recognize(file)
+    const { query, recognized } = bestOcrQuery(data.text || '')
+    if (!query) throw new Error('Could not read enough text from the card. Try a brighter, closer photo.')
+
+    const response = await searchCards({ name: query, page: 1, page_size: 12, lang: 'all' })
+    const targetNumber = String(recognized.number || '').replace(/^0+/, '')
+    const matches = (response.data?.data || [])
+      .sort((a, b) => {
+        if (!targetNumber) return 0
+        const aNumber = String(a.number || a.localId || '').replace(/^0+/, '')
+        const bNumber = String(b.number || b.localId || '').replace(/^0+/, '')
+        return (aNumber === targetNumber ? 0 : 1) - (bNumber === targetNumber ? 0 : 1)
+      })
+      .slice(0, 8)
+      .map(card => ({
+        ...card,
+        image: card.images_small,
+        set_abbreviation: card.set_ref?.abbreviation || card.set_id,
+        lang: 'en',
+        _lang: 'en',
+      }))
+
+    return {
+      recognized: { ...recognized, language: 'en' },
+      matches,
+    }
+  } finally {
+    await worker.terminate()
+  }
+}
+
+function withTimeout(promise, ms, message) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      window.setTimeout(() => reject(new Error(message)), ms)
+    }),
+  ])
+}
+
 // ─── Add-to-Collection Modal für Scan-Ergebnis ──────────────────────────────
-function ScanAddModal({ match, defaultLang, onClose, onAdded }) {
+function ScanAddModal({ match, onClose, onAdded }) {
   const { t } = useSettings()
   const [quantity, setQuantity] = useState(1)
   const [condition, setCondition] = useState('NM')
   const [variant, setVariant] = useState(() => getDefaultVariant(match))
-  const [lang, setLang] = useState(match.lang || defaultLang || 'en')
   const [purchasePrice, setPurchasePrice] = useState('')
   const [adding, setAdding] = useState(false)
   const queryClient = useQueryClient()
@@ -26,7 +105,7 @@ function ScanAddModal({ match, defaultLang, onClose, onAdded }) {
         quantity,
         condition,
         variant: variant || null,
-        lang,
+        lang: 'en',
         purchase_price: purchasePrice ? parseFloat(purchasePrice) : undefined,
       })
       queryClient.invalidateQueries({ queryKey: ['collection'] })
@@ -72,32 +151,6 @@ function ScanAddModal({ match, defaultLang, onClose, onAdded }) {
           </div>
 
           <div className="space-y-3">
-            {/* Language */}
-            <div>
-              <label className="text-xs text-text-muted mb-1.5 block font-medium">🌐 {t('lang.filter')}</label>
-              <div className="flex gap-2">
-                {['de', 'en'].map(l => (
-                  <button
-                    key={l}
-                    type="button"
-                    onClick={() => setLang(l)}
-                    className={clsx(
-                      'flex-1 py-1.5 rounded-lg text-sm font-bold transition-all border',
-                      lang === l
-                        ? l === 'de'
-                          ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50'
-                          : l === 'en'
-                            ? 'bg-blue-500/20 text-blue-400 border-blue-500/50'
-                            : 'bg-white/5 text-text-muted border-white/10'
-                        : 'bg-white/5 text-text-muted border-white/10'
-                    )}
-                  >
-                    {l === 'de' ? `🇩🇪 ${t('lang.de_full')}` : `🇬🇧 ${t('lang.en_full')}`}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {/* Quantity + Condition */}
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -178,8 +231,25 @@ export default function CardScanner({ isOpen, onClose, onCardSelected }) {
       setResults(data)
       setPhase('results')
     } catch (e) {
-      const msg = e?.response?.data?.detail || t('scanner.recognitionFailed')
-      toast.error(msg)
+      const code = e?.response?.data?.code
+      if (code === 'SCANNER_NOT_CONFIGURED' || e?.response?.status === 503) {
+        try {
+          toast(t('scanner.localOcrFallback') || 'Trying local OCR on this device...')
+          const data = await withTimeout(
+            recognizeWithLocalOcr(file),
+            25000,
+            'Local text recognition took too long. Try smart search with the card name or printed number.'
+          )
+          setResults(data)
+          setPhase('results')
+          return
+        } catch (ocrError) {
+          toast.error(ocrError?.message || t('scanner.recognitionFailed'))
+        }
+      } else {
+        const msg = e?.response?.data?.detail || t('scanner.recognitionFailed')
+        toast.error(msg)
+      }
       setPhase('capture')
       setPreview(null)
     }
@@ -191,8 +261,6 @@ export default function CardScanner({ isOpen, onClose, onCardSelected }) {
     setResults(null)
     setAddModal(null)
   }
-
-  const detectedLang = results?.recognized?.language || 'en'
 
   return (
     <div className="fixed inset-0 z-[200] flex flex-col"
@@ -277,11 +345,6 @@ export default function CardScanner({ isOpen, onClose, onCardSelected }) {
               {results.recognized?.number && (
                 <p className="text-sm text-text-muted">Nr. {results.recognized.number}</p>
               )}
-              {results.recognized?.language && (
-                <p className="text-xs text-text-muted mt-0.5 uppercase tracking-wider">
-                  {t('scanner.detectedLanguage')} {results.recognized.language}
-                </p>
-              )}
             </div>
 
             {results.matches?.length > 0 ? (
@@ -292,13 +355,12 @@ export default function CardScanner({ isOpen, onClose, onCardSelected }) {
                 {/* Grid layout — like Sets overview */}
                 <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 gap-2">
                   {results.matches.map(match => {
-                    const matchLang = match.lang || match._lang || 'en'
                     // Format card ID as "SETCODE NUMBER", e.g. "OBF 125"
                     const setCode = (match.set_abbreviation || match.set?.id || (match.id || '').split('-')[0]).toUpperCase()
                     const localNum = match.localId || match.number || ''
                     const cardIdLabel = `${setCode} ${localNum}`.trim()
                     return (
-                      <div key={`${match.id}-${matchLang}`}
+                      <div key={match.id}
                         className="flex flex-col cursor-pointer group hover:shadow-glow transition-all duration-200 hover:rotate-1"
                         onClick={() => setAddModal(match)}
                       >
@@ -311,14 +373,6 @@ export default function CardScanner({ isOpen, onClose, onCardSelected }) {
                                 <span className="text-[9px] text-text-muted text-center p-1">{match.name}</span>
                               </div>
                           }
-                          {/* Language badge — top right overlay */}
-                          <span className={`absolute top-1 right-1 text-[8px] font-black px-1 py-0.5 rounded leading-none ${
-                            matchLang === 'de'
-                              ? 'bg-yellow-500/80 text-yellow-900 border border-yellow-500/50'
-                              : 'bg-blue-500/80 text-white border border-blue-500/50'
-                          }`}>
-                            {matchLang === 'de' ? '🇩🇪' : '🇬🇧'}
-                          </span>
                           {/* Hover overlay with add button */}
                           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 rounded-xl">
                             <div className="w-7 h-7 rounded-full flex items-center justify-center"
@@ -363,7 +417,6 @@ export default function CardScanner({ isOpen, onClose, onCardSelected }) {
       {addModal && (
         <ScanAddModal
           match={addModal}
-          defaultLang={detectedLang}
           onClose={() => setAddModal(null)}
           onAdded={() => setAddModal(null)}
         />
