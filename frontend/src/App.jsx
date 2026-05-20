@@ -1,7 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import PokeBallLoader from './components/PokeBallLoader'
+import AppLoader from './components/AppLoader'
 import { SettingsProvider } from './contexts/SettingsContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { forceChangePassword } from './api/client'
@@ -102,7 +102,7 @@ function ProtectedRoutes() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-bg-primary">
-        <PokeBallLoader size={48} />
+        <AppLoader size={48} />
       </div>
     )
   }
@@ -114,7 +114,7 @@ function ProtectedRoutes() {
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-bg-primary">
-        <PokeBallLoader size={48} />
+        <AppLoader size={48} />
       </div>
     )
   }

@@ -310,40 +310,19 @@ input:-webkit-autofill:focus {
   .bottom-nav-fob-active .bottom-nav-fob-label {
     color: var(--color-brand-red);
   }
-  .pokeball-fob {
+  .dokiedex-fob {
     position: relative;
     width: 3.35rem;
     height: 3.35rem;
     margin-top: -1.75rem;
-    border-radius: 999px;
+    border-radius: 1rem;
     border: 2px solid #08080f;
-    background: linear-gradient(180deg, #e3000b 0 48%, #08080f 48% 54%, #f4f4f5 54% 100%);
+    background: #12121d;
+    object-fit: cover;
     box-shadow:
       0 8px 28px rgba(0,0,0,0.55),
       0 0 0 4px rgba(15,15,26,0.9),
       0 0 24px rgba(227,0,11,0.28);
-  }
-  .pokeball-fob-line {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 50%;
-    height: 3px;
-    transform: translateY(-50%);
-    background: #08080f;
-  }
-  .pokeball-fob-center {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    z-index: 1;
-    width: 1.2rem;
-    height: 1.2rem;
-    transform: translate(-50%, -50%);
-    border-radius: 999px;
-    border: 3px solid #08080f;
-    background: #f8fafc;
-    box-shadow: inset 0 0 0 3px #d1d5db;
   }
   .bottom-nav-active {
     @apply text-brand-red;
@@ -469,11 +448,11 @@ input:-webkit-autofill:focus {
     box-shadow: 0 0 6px rgba(227,0,11,0.5);
   }
 
-  /* Pokemon card — hover lift + glow */
-  .pokemon-card-glow {
+  /* Card hover lift + glow */
+  .card-hover-glow {
     transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   }
-  .pokemon-card-glow:hover {
+  .card-hover-glow:hover {
     transform: scale(1.03);
     box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 16px rgba(227,0,11,0.2);
     border-color: rgba(227,0,11,0.35);
@@ -483,7 +462,7 @@ input:-webkit-autofill:focus {
   .card-image-wrapper img {
     transition: filter 0.2s ease;
   }
-  .pokemon-card-glow:hover .card-image-wrapper img {
+  .card-hover-glow:hover .card-image-wrapper img {
     filter: brightness(1.05) saturate(1.1);
   }
 
@@ -499,7 +478,7 @@ input:-webkit-autofill:focus {
 }
 
 /* ===================== */
-/* POKEMON VISUAL SYSTEM */
+/* COLLECTOR VISUAL SYSTEM */
 /* ===================== */
 
 /* Trainer Card — the hero widget on Dashboard */
@@ -522,12 +501,13 @@ input:-webkit-autofill:focus {
   pointer-events: none;
 }
 
-/* Pokeball watermark rings (decorative) */
-.pokeball-ring {
+/* Scanner watermark rings (decorative) */
+.scanner-ring {
   position: absolute;
-  border-radius: 50%;
+  border-radius: 32px;
   border: 20px solid rgba(255,255,255,0.025);
   pointer-events: none;
+  transform: rotate(-12deg);
 }
 
 /* Holo card effect — for rare+ cards in collection grid */
@@ -580,7 +560,7 @@ input:-webkit-autofill:focus {
   100% { background-position: 0% 50%; }
 }
 
-/* Binder grid — looks like a real Pokemon binder */
+/* Binder grid */
 .binder-grid {
   background: rgba(10,14,26,0.8);
   border: 1px solid rgba(255,255,255,0.06);
@@ -607,13 +587,14 @@ input:-webkit-autofill:focus {
   transition: transform 0.3s ease;
 }
 
-/* Pokeball loader */
-@keyframes pokeball-spin {
+/* App mark loader */
+@keyframes dokiedex-spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
-.pokeball-loader {
-  animation: pokeball-spin 1s linear infinite;
+.dokiedex-loader {
+  animation: dokiedex-spin 1s linear infinite;
+  border-radius: 12px;
 }
 
 /* Gold value text */
@@ -621,7 +602,7 @@ input:-webkit-autofill:focus {
 .bg-gold { background-color: #f5c842; }
 .border-gold { border-color: rgba(245,200,66,0.4); }
 
-/* HP bar — like Pokemon game */
+/* Progress bar */
 .hp-bar-track {
   height: 8px;
   background: rgba(0,0,0,0.4);
@@ -669,7 +650,7 @@ body {
 #root > * { position: relative; z-index: 1; }
 
 /* ================================================ */
-/* 3D CARD EFFECT — The signature Pokemon feel      */
+/* 3D CARD EFFECT                                      */
 /* ================================================ */
 .card-3d {
   transform-style: preserve-3d;
@@ -787,7 +768,7 @@ body {
 .energy-rare    { background: rgba(245,200,66,0.15); color: #f5c842; border: 1px solid rgba(245,200,66,0.35); }
 .energy-ultra   { background: rgba(227,0,11,0.15); color: #ff5252; border: 1px solid rgba(227,0,11,0.35); }
 
-/* ─── Pokemon Type Themes ────────────────────────────────────────────────── */
+/* Theme variants */
 [data-theme="fire"] {
   --color-bg:          #0f0805;
   --color-surface:     #1a0f08;

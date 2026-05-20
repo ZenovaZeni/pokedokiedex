@@ -2,6 +2,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { LogOut } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useSettings } from '../contexts/SettingsContext'
+import CollectorAvatar from './CollectorAvatar'
 
 const PAGE_TITLE_KEYS = {
   '/collection': 'nav.collection',
@@ -16,6 +17,8 @@ const PAGE_TITLE_KEYS = {
   '/settings': 'nav.settings',
   '/migration': 'migration.title',
   '/dashboard': 'nav.dashboard',
+  '/ebay': 'nav.ebayMarket',
+  '/legal': 'nav.legal',
 }
 
 export default function AppNav() {
@@ -53,13 +56,7 @@ export default function AppNav() {
               className="pointer-events-auto flex h-8 min-w-8 items-center justify-center gap-1.5 rounded-lg px-1.5 text-text-muted transition-colors hover:text-brand-red"
               aria-label={t('auth.logout')}
             >
-              {user?.avatar_id ? (
-                <img
-                  src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${user.avatar_id}.gif`}
-                  alt={`${user.username} avatar`}
-                  className="h-5 w-5 pixelated"
-                />
-              ) : null}
+              {user?.avatar_id ? <CollectorAvatar avatarId={user.avatar_id} username={user.username} className="h-5 w-5 rounded-md" /> : null}
               <LogOut size={16} />
             </button>
           ) : (

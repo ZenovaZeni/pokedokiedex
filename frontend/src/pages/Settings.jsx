@@ -15,6 +15,7 @@ import { useTheme } from '../hooks/useTheme'
 import { useSettings } from '../contexts/SettingsContext'
 import Modal from '../components/ui/Modal'
 import AvatarPicker from '../components/AvatarPicker'
+import CollectorAvatar from '../components/CollectorAvatar'
 import { formatDistanceToNow } from 'date-fns'
 import toast from 'react-hot-toast'
 
@@ -490,11 +491,7 @@ export default function Settings() {
                 >
                   <div className="flex h-16 w-16 items-center justify-center rounded-full border border-border bg-bg-card">
                     {user?.avatar_id ? (
-                      <img
-                        src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${user.avatar_id}.gif`}
-                        alt={`${user.username} avatar`}
-                        className="h-12 w-12 pixelated"
-                      />
+                      <CollectorAvatar avatarId={user.avatar_id} username={user.username} className="h-12 w-12" />
                     ) : (
                       <User size={24} className="text-text-muted" />
                     )}
@@ -664,7 +661,7 @@ export default function Settings() {
           <section className="space-y-1">
             <SectionHeader title={t('settings.sectionAbout')} />
             <SettingsCard>
-              <SettingsRow label={t('settings.app')} description="Pokemon TCG Collection">
+              <SettingsRow label={t('settings.app')} description="PokeDokieDex">
                 <span className="text-xs font-bold text-text-muted px-2 py-1 rounded-lg"
                   style={{ background: 'rgba(255,255,255,0.05)' }}>
                   v{__APP_VERSION__}

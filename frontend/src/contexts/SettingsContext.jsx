@@ -3,6 +3,7 @@ import en from '../i18n/en'
 import { getStoredToken } from '../lib/authStorage'
 
 const translations = { en }
+const USD_EXCHANGE_RATE = 1.1
 
 const DEFAULT_SETTINGS = {
   language: 'en',
@@ -31,7 +32,6 @@ const SettingsContext = createContext(null)
 export function SettingsProvider({ children }) {
   const [settings, setSettings] = useState(DEFAULT_SETTINGS)
   const [loaded, setLoaded] = useState(false)
-  const [exchangeRate, setExchangeRate] = useState(1.0)
 
   // Load settings from backend on mount
   useEffect(() => {
@@ -48,19 +48,6 @@ export function SettingsProvider({ children }) {
         setLoaded(true)
       })
   }, [])
-
-  // Fetch exchange rate whenever currency changes to USD
-  useEffect(() => {
-    const curr = settings.currency || 'USD'
-    if (curr === 'USD') {
-      fetch('https://api.frankfurter.app/latest?from=EUR&to=USD')
-        .then(r => r.json())
-        .then(data => setExchangeRate(data.rates?.USD || 1.1))
-        .catch(() => setExchangeRate(1.1))
-    } else {
-      setExchangeRate(1.0)
-    }
-  }, [settings.currency])
 
   // Update one or more settings
   const updateSettings = useCallback(async (updates) => {
@@ -130,9 +117,9 @@ export function SettingsProvider({ children }) {
 
   const formatPrice = useCallback((eurAmount) => {
     if (eurAmount == null || isNaN(Number(eurAmount))) return '-'
-    const converted = Number(eurAmount) * exchangeRate
+    const converted = Number(eurAmount) * USD_EXCHANGE_RATE
     return `${currencySymbol}${converted.toFixed(2)}`
-  }, [exchangeRate, currencySymbol])
+  }, [currencySymbol])
 
   return (
     <SettingsContext.Provider value={{

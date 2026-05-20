@@ -19,7 +19,7 @@ function setupMessage(error, status) {
 }
 
 export default function EbayMarket() {
-  const [input, setInput] = useState('Charizard Pokemon card')
+  const [input, setInput] = useState('Charizard card')
   const [query, setQuery] = useState('')
   const [searchId, setSearchId] = useState(0)
 

@@ -12,7 +12,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { format, parseISO } from 'date-fns'
 import PeriodSelector, { CARD_PERIODS, PERIOD_PRICE_FIELD } from '../components/PeriodSelector'
 import TrainerCard from '../components/TrainerCard'
-import PokeBallLoader from '../components/PokeBallLoader'
+import AppLoader from '../components/AppLoader'
 
 const CustomTooltip = ({ active, payload, label }) => {
   const { formatPrice } = useSettings()
@@ -77,7 +77,7 @@ export default function Dashboard() {
   if (error) {
     return (
       <div className="card text-center py-12">
-        <PokeBallLoader size={48} className="mb-4 opacity-40" />
+        <AppLoader size={48} className="mb-4 opacity-40" />
         <p className="text-brand-red">{t('dashboard.backendError')}</p>
       </div>
     )
@@ -280,7 +280,7 @@ export default function Dashboard() {
           ) : (
             <div className="h-[220px] flex items-center justify-center text-text-muted">
               <div className="text-center">
-                <PokeBallLoader size={48} className="mb-3 opacity-30" />
+                <AppLoader size={48} className="mb-3 opacity-30" />
                 <p>{t('dashboard.noPriceHistory')}</p>
                 <p className="text-xs mt-1">{t('dashboard.syncToStart')}</p>
               </div>

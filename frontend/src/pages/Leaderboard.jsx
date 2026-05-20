@@ -7,6 +7,7 @@ import { useSettings } from '../contexts/SettingsContext'
 import { useAuth } from '../contexts/AuthContext'
 import TabNav from '../components/TabNav'
 import { resolveCardImageUrl } from '../utils/imageUrl'
+import CollectorAvatar from '../components/CollectorAvatar'
 
 const SORT_OPTIONS = ['total_value', 'total_cards', 'unique_cards', 'sets_completed', 'pnl']
 
@@ -19,16 +20,10 @@ function rankLabel(rank) {
 
 function TrainerAvatar({ avatarId, username }) {
   if (!avatarId) {
-    return <img src="/pokeball.svg" alt={username} className="h-12 w-12 rounded-full border border-border bg-bg-card p-2" />
+    return <img src="/dokiedex-mark.svg" alt={username} className="h-12 w-12 rounded-xl border border-border bg-bg-card p-1" />
   }
 
-  return (
-    <img
-      src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${avatarId}.gif`}
-      alt={username}
-      className="h-12 w-12 rounded-full border border-border bg-bg-card p-1 pixelated"
-    />
-  )
+  return <CollectorAvatar avatarId={avatarId} username={username} className="h-12 w-12" />
 }
 
 export default function Leaderboard() {

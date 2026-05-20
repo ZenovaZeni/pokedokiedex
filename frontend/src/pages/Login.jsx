@@ -5,6 +5,7 @@ import toast from 'react-hot-toast'
 import { login } from '../api/client'
 import { useAuth } from '../contexts/AuthContext'
 import { getRememberPreference } from '../lib/authStorage'
+import CollectorAvatar from '../components/CollectorAvatar'
 
 export default function Login() {
   const [mode, setMode] = useState('signin')
@@ -54,7 +55,7 @@ export default function Login() {
             Home
           </Link>
           <div className="flex items-center gap-2 text-sm font-black tracking-[0.18em] text-text-primary">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-red text-white shadow-glow-btn">P</span>
+            <img src="/dokiedex-mark.svg" alt="" className="h-8 w-8 rounded-xl shadow-glow-btn" />
             <span className="hidden sm:inline">PokeDokieDex</span>
           </div>
         </header>
@@ -66,7 +67,7 @@ export default function Login() {
                 Your card collection, protected by your own trainer account.
               </h1>
               <p className="max-w-xl text-base leading-7 text-text-secondary sm:text-lg">
-                Sign in to manage your Pokemon cards, values, binders, wishlist, and collection stats from any phone or browser.
+                Sign in to manage your cards, values, binders, wishlist, and collection stats from any phone or browser.
               </p>
             </div>
 
@@ -108,11 +109,7 @@ export default function Login() {
             <div className="mb-6 text-center">
               <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl border border-white/10 bg-bg-primary shadow-elevated">
                 {lastUserAvatar && !isCreate ? (
-                  <img
-                    src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${lastUserAvatar}.gif`}
-                    alt={`${lastUser} avatar`}
-                    className="h-12 w-12 pixelated"
-                  />
+                  <CollectorAvatar avatarId={lastUserAvatar} username={lastUser} className="h-14 w-14" />
                 ) : (
                   <User className="text-gold" size={34} />
                 )}

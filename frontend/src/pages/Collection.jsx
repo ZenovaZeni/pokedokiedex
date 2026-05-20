@@ -832,7 +832,7 @@ export default function Collection() {
         <>
           {items.length === 0 ? (
             <div className="card text-center py-20">
-              <img src="/pokeball.svg" className="w-16 h-16 mx-auto mb-4 opacity-20" alt="" />
+              <img src="/dokiedex-mark.svg" className="w-16 h-16 mx-auto mb-4 opacity-20 rounded-2xl" alt="" />
               <p className="text-text-muted">{t('collection.empty')}</p>
               <p className="text-xs text-text-muted mt-1">{t('collection.emptyHint')}</p>
             </div>
@@ -920,7 +920,7 @@ export default function Collection() {
         <>
           {items.length === 0 ? (
             <div className="card text-center py-20">
-              <div className="w-24 h-24 pokeball-bg mx-auto mb-4 opacity-20" />
+              <img src="/dokiedex-mark.svg" className="w-24 h-24 mx-auto mb-4 opacity-20 rounded-2xl" alt="" />
               <p className="text-text-muted">{t('collection.empty')}</p>
               <p className="text-xs text-text-muted mt-1">{t('collection.emptyHint')}</p>
             </div>

@@ -1,9 +1,7 @@
-// Shows the user's trainer profile like a real Pokemon Trainer Card
-// Props: trainerName, totalCards, totalValue, collectedSets, totalSets, weeklyGain, gainLoss
 import { useSettings } from '../contexts/SettingsContext'
 
 export default function TrainerCard({
-  trainerName = 'TRAINER',
+  trainerName = 'COLLECTOR',
   totalCards = 0,
   totalValue = 0,
   collectedSets = 0,
@@ -17,22 +15,18 @@ export default function TrainerCard({
 
   return (
     <div className="trainer-card p-0 overflow-hidden">
-      {/* Pokeball watermark rings */}
-      <div className="pokeball-ring" style={{ width: 300, height: 300, bottom: -120, right: -80 }} />
-      <div className="pokeball-ring" style={{ width: 200, height: 200, bottom: -60, right: -20, borderWidth: 14 }} />
+      <div className="scanner-ring" style={{ width: 300, height: 300, bottom: -120, right: -80 }} />
+      <div className="scanner-ring" style={{ width: 200, height: 200, bottom: -60, right: -20, borderWidth: 14 }} />
 
-      {/* Header bar */}
       <div className="bg-brand-red px-4 py-2 flex items-center justify-between">
-        <span className="text-white text-xs font-black tracking-[0.2em] uppercase">Pokémon Trainer</span>
+        <span className="text-white text-xs font-black tracking-[0.2em] uppercase">Collector ID</span>
         <span className="text-white/50 text-[10px] tracking-wider">
           ID No. {String(totalCards).padStart(6, '0')}
         </span>
       </div>
 
-      {/* Card body */}
       <div className="p-4">
         <div className="flex gap-4 items-start">
-          {/* Avatar placeholder */}
           <div
             className="w-20 h-24 rounded-xl flex-shrink-0 flex items-center justify-center overflow-hidden"
             style={{
@@ -40,15 +34,14 @@ export default function TrainerCard({
               border: '1px solid rgba(245,200,66,0.25)',
             }}
           >
-            <img src="/pokeball.svg" className="w-12 h-12 opacity-50" alt="" />
+            <img src="/dokiedex-mark.svg" className="w-12 h-12 opacity-70 rounded-xl" alt="" />
           </div>
 
-          {/* Stats */}
           <div className="flex-1 min-w-0">
             <p className="text-gold font-black text-xl leading-none tracking-wide mb-0.5 truncate">
               {trainerName.toUpperCase()}
             </p>
-            <p className="text-text-muted text-[10px] mb-3 tracking-wider uppercase">Trainer</p>
+            <p className="text-text-muted text-[10px] mb-3 tracking-wider uppercase">Collector</p>
 
             <div className="space-y-1">
               <div className="flex justify-between text-xs">
@@ -67,7 +60,6 @@ export default function TrainerCard({
           </div>
         </div>
 
-        {/* Collection HP bar */}
         <div className="mt-4">
           <div className="flex justify-between text-[10px] text-text-muted mb-1.5">
             <span className="uppercase tracking-wider">Progress</span>
@@ -78,7 +70,6 @@ export default function TrainerCard({
           </div>
         </div>
 
-        {/* Weekly gain / P&L */}
         {(weeklyGain !== 0 || gainLoss !== 0) && (
           <div className="flex gap-4 mt-3 pt-3 border-t border-white/5">
             {weeklyGain !== 0 && (

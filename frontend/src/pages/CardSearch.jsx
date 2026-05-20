@@ -478,7 +478,7 @@ export default function CardSearch() {
       {/* ─── Empty / loading / error states ──────────────────────── */}
       {!hasQuery && (
         <div className="text-center py-20">
-          <div className="w-24 h-24 pokeball-bg mx-auto mb-4 opacity-20" />
+          <img src="/dokiedex-mark.svg" className="w-24 h-24 mx-auto mb-4 opacity-20 rounded-2xl" alt="" />
           <p className="text-text-muted">{t('cardSearch.trySearch')}</p>
           <p className="text-xs text-text-muted mt-1">{t('cardSearch.trySearchHint')}</p>
         </div>

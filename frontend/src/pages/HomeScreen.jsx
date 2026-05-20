@@ -16,6 +16,7 @@ import { format, parseISO } from 'date-fns'
 import { useTilt } from '../hooks/useTilt'
 import { resolveCardImageUrl } from '../utils/imageUrl'
 import CardImage from '../components/CardImage'
+import CollectorAvatar from '../components/CollectorAvatar'
 
 // Compact number formatter for mobile (1.2k, 3.4M, etc.)
 function compactNum(n) {
@@ -223,13 +224,7 @@ export default function HomeScreen() {
         <div className="text-center -mt-2">
           {/* Trainer greeting */}
           <div className="mb-1 flex items-center justify-center gap-2 truncate max-w-[90vw] mx-auto">
-            {user?.avatar_id ? (
-              <img
-                src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${user.avatar_id}.gif`}
-                alt={`${trainerName} avatar`}
-                className="h-6 w-6 pixelated"
-              />
-            ) : null}
+            {user?.avatar_id ? <CollectorAvatar avatarId={user.avatar_id} username={trainerName} className="h-6 w-6 rounded-lg" /> : null}
             <p className="text-sm font-semibold truncate" style={{ color: 'rgba(255,255,255,0.55)' }}>
               {t('home.hello')}, <span className="font-black" style={{ color: '#f5c842' }}>{trainerName}</span>! 👋
             </p>

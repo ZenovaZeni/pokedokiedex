@@ -6,19 +6,14 @@ import { compareUsers } from '../api/client'
 import { useSettings } from '../contexts/SettingsContext'
 import { useAuth } from '../contexts/AuthContext'
 import { resolveCardImageUrl } from '../utils/imageUrl'
+import CollectorAvatar from '../components/CollectorAvatar'
 
 function TrainerAvatar({ avatarId, username }) {
   if (!avatarId) {
-    return <img src="/pokeball.svg" alt={username} className="h-16 w-16 rounded-full border border-border bg-bg-card p-3" />
+    return <img src="/dokiedex-mark.svg" alt={username} className="h-16 w-16 rounded-2xl border border-border bg-bg-card p-1.5" />
   }
 
-  return (
-    <img
-      src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${avatarId}.gif`}
-      alt={username}
-      className="h-16 w-16 rounded-full border border-border bg-bg-card p-1 pixelated"
-    />
-  )
+  return <CollectorAvatar avatarId={avatarId} username={username} className="h-16 w-16" />
 }
 
 function StatBlock({ label, value, accent }) {

@@ -11,6 +11,12 @@ if (savedTheme && savedTheme !== 'default') {
   document.documentElement.setAttribute('data-theme', savedTheme)
 }
 
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {})
+  })
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

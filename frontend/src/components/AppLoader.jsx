@@ -1,10 +1,10 @@
-export default function PokeBallLoader({ size = 32, className = '' }) {
+export default function AppLoader({ size = 32, className = '' }) {
   return (
     <div className={`flex items-center justify-center ${className}`}>
       <img
-        src="/pokeball.svg"
+        src="/dokiedex-mark.svg"
         alt="Loading..."
-        className="pokeball-loader"
+        className="dokiedex-loader"
         style={{ width: size, height: size, opacity: 0.7 }}
       />
     </div>

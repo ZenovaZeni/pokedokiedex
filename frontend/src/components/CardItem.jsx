@@ -42,7 +42,7 @@ function getPriceValue(card, priceKey) {
     ?? null
 }
 
-const POKEMON_TYPES = ['Fire', 'Water', 'Grass', 'Lightning', 'Psychic', 'Fighting', 'Darkness', 'Metal', 'Dragon', 'Colorless', 'Fairy', 'Stellar']
+const CARD_TYPES = ['Fire', 'Water', 'Grass', 'Lightning', 'Psychic', 'Fighting', 'Darkness', 'Metal', 'Dragon', 'Colorless', 'Fairy', 'Stellar']
 
 export function CustomCardModal({ onClose, onCreated, sets: setsProp = [], autoAddCollection = false, editCard = null }) {
   const { t } = useSettings()
@@ -247,7 +247,7 @@ export function CustomCardModal({ onClose, onCreated, sets: setsProp = [], autoA
               <div>
                 <label className="text-xs text-text-secondary mb-2 block">{t('common.type')}</label>
                 <div className="flex flex-wrap gap-1.5">
-                  {POKEMON_TYPES.map(tp => (
+                  {CARD_TYPES.map(tp => (
                     <button key={tp} type="button" onClick={() => toggleType(tp)}
                       className={clsx(
                         'text-xs px-2 py-1 rounded-full border transition-all',

@@ -194,7 +194,7 @@ export const downloadBackup = (include = 'full') => {
     const url = window.URL.createObjectURL(r.data)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'pokemon_tcg_backup.sql'
+    a.download = 'pokedokiedex_backup.sql'
     a.click()
     window.URL.revokeObjectURL(url)
   })

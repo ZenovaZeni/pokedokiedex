@@ -16,7 +16,7 @@ export default function Landing() {
       <div className="relative mx-auto flex min-h-dvh w-full max-w-6xl flex-col px-4 py-5 sm:px-6">
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm font-black tracking-[0.18em]">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-red text-white shadow-glow-btn">P</span>
+            <img src="/dokiedex-mark.svg" alt="" className="h-9 w-9 rounded-xl shadow-glow-btn" />
             <span>PokeDokieDex</span>
           </div>
           <Link to="/login" className="btn-ghost-sm">
@@ -25,14 +25,14 @@ export default function Landing() {
           </Link>
         </header>
 
-        <section className="grid flex-1 items-center gap-10 py-10 lg:grid-cols-[1fr_420px] lg:py-16">
+        <section className="grid flex-1 items-center gap-10 py-10 lg:grid-cols-[0.88fr_1.12fr] lg:py-16">
           <div className="space-y-7">
             <div className="max-w-3xl space-y-5">
               <h1 className="text-5xl font-black leading-[0.98] tracking-normal sm:text-6xl lg:text-7xl">
-                Track every Pokemon card like a serious collector.
+                Card chaos, neatly contained.
               </h1>
               <p className="max-w-2xl text-base leading-7 text-text-secondary sm:text-lg">
-                Build your collection, watch USD values, organize binders, and keep each trainer account separate on phone or desktop.
+                Track your collection, check USD market estimates, organize binders, and let one very serious little scanner keep the nonsense in order.
               </p>
             </div>
 
@@ -60,31 +60,17 @@ export default function Landing() {
             </div>
           </div>
 
-          <div className="relative mx-auto w-full max-w-sm">
-            <div className="absolute -inset-4 rounded-[2rem] bg-brand-red/10 blur-2xl" />
-            <div className="relative overflow-hidden rounded-[2rem] border border-border bg-bg-card/90 p-4 shadow-2xl backdrop-blur">
-              <div className="mb-4 flex items-center justify-between">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.24em] text-text-muted">Portfolio value</p>
-                  <p className="mt-1 text-4xl font-black text-gold">$9.63</p>
-                </div>
-                <ShieldCheck className="text-green" size={28} />
-              </div>
-              <div className="rounded-2xl border border-border bg-bg-primary/70 p-3">
-                <img
-                  src="https://assets.tcgdex.net/en/base/base1/58/high.webp"
-                  alt="Pikachu card preview"
-                  className="mx-auto h-48 rounded-lg object-contain drop-shadow-2xl"
-                />
-                <div className="mt-4 flex items-center justify-between">
-                  <div>
-                    <p className="font-bold">Pikachu</p>
-                    <p className="text-xs text-text-muted">Base Set · Quantity 7</p>
-                  </div>
-                  <p className="font-black text-gold">$9.63</p>
-                </div>
-              </div>
-            </div>
+          <div className="relative mx-auto w-full max-w-3xl">
+            <div className="absolute -inset-5 rounded-[2rem] bg-brand-red/10 blur-3xl" />
+            <picture>
+              <source srcSet="/brand/dokiedex-hero.webp" type="image/webp" />
+              <img
+                src="/brand/dokiedex-hero.png"
+                alt="A goofy original card-scanner mascot guarding a fictional card collection dashboard."
+                className="relative aspect-[1717/916] w-full rounded-[1.5rem] border border-border object-cover object-center shadow-2xl"
+                fetchPriority="high"
+              />
+            </picture>
           </div>
         </section>
 
@@ -95,7 +81,7 @@ export default function Landing() {
             [Library, 'Collection tools', 'Cards, binders, wishlist, analytics, and exports are ready to use.'],
             [Smartphone, 'Phone optimized', 'The core collection workflow is designed for mobile screens.'],
             [BarChart3, 'USD values', 'Money is shown for United States users by default.'],
-            [Camera, 'Scanner ready', 'The next backend feature can connect phone camera card lookup.'],
+            [Camera, 'Scanner ready', 'Phone camera card lookup can be wired in as the next big upgrade.'],
           ].map(([Icon, title, body]) => (
             <div key={title} className="rounded-2xl border border-border bg-bg-card/70 p-4 backdrop-blur">
               <Icon className="mb-3 text-gold" size={22} />

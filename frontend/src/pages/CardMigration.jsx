@@ -141,7 +141,7 @@ export default function CardMigration() {
         </div>
       ) : matches.length === 0 ? (
         <div className="card text-center py-16">
-          <div className="w-16 h-16 pokeball-bg mx-auto mb-4 opacity-30" />
+          <img src="/dokiedex-mark.svg" className="w-16 h-16 mx-auto mb-4 opacity-30 rounded-2xl" alt="" />
           <p className="text-text-secondary font-medium">{t('migration.empty')}</p>
           <p className="text-xs text-text-muted mt-1">{t('migration.emptyHint')}</p>
         </div>
