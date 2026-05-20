@@ -23,13 +23,14 @@ const PAGE_TITLE_KEYS = {
 function SparkDokieMascot() {
   return (
     <span
-      className="relative flex h-7 w-7 shrink-0 items-center justify-center"
+      className="relative flex h-10 w-10 shrink-0 items-center justify-center"
       aria-hidden="true"
     >
+      <span className="absolute inset-1 rounded-full bg-yellow/20 blur-md" />
       <img
         src="/brand/dokie-spark.svg"
         alt=""
-        className="h-8 w-8 drop-shadow-[0_0_12px_rgba(245,200,66,0.5)]"
+        className="relative h-11 w-11 translate-y-0.5 drop-shadow-[0_0_16px_rgba(245,200,66,0.58)]"
         style={{ animation: 'mascot-bob 1.8s ease-in-out infinite' }}
       />
     </span>
@@ -66,16 +67,26 @@ export default function AppNav() {
             {title}
           </p>
           {multiUser ? (
-            <button
-              onClick={handleLogout}
-              className="pointer-events-auto flex h-8 min-w-8 items-center justify-center gap-1.5 rounded-lg px-1.5 text-text-muted transition-colors hover:text-brand-red"
-              aria-label={t('auth.logout')}
-            >
-              <SparkDokieMascot />
-              <LogOut size={16} />
-            </button>
+            <div className="flex w-16 items-center justify-end gap-1">
+              <button
+                onClick={handleLogout}
+                className="pointer-events-auto -my-2 flex h-11 w-11 items-center justify-center rounded-full transition-transform hover:scale-105"
+                aria-label={t('auth.logout')}
+                title={t('auth.logout')}
+              >
+                <SparkDokieMascot />
+              </button>
+              <button
+                onClick={handleLogout}
+                className="pointer-events-auto flex h-8 w-7 items-center justify-center rounded-lg text-text-muted transition-colors hover:text-brand-red"
+                aria-label={t('auth.logout')}
+                title={t('auth.logout')}
+              >
+                <LogOut size={16} />
+              </button>
+            </div>
           ) : (
-            <div className="w-8" />
+            <div className="w-16" />
           )}
         </div>
       )}
