@@ -1,16 +1,17 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { getAuthMode, getMe } from '../api/client'
+import { getAuthMode, getMe, logoutSession } from '../api/client'
+import { clearAuthSession, getStoredToken, getStoredUser, storeAuthSession, updateStoredUser } from '../lib/authStorage'
 
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
-    const stored = localStorage.getItem('user')
+    const stored = getStoredUser()
     if (!stored) return null
     try {
       return JSON.parse(stored)
     } catch {
-      localStorage.removeItem('user')
+      clearAuthSession()
       return null
     }
   })
@@ -21,35 +22,33 @@ export function AuthProvider({ children }) {
     getAuthMode()
       .then(({ multi_user }) => {
         setMultiUser(multi_user)
-        const token = localStorage.getItem('token')
+        const token = getStoredToken()
         if (!multi_user || token) {
           return getMe().then((currentUser) => {
             setUser(currentUser)
-            localStorage.setItem('user', JSON.stringify(currentUser))
+            updateStoredUser(currentUser)
           })
         }
         setUser(null)
       })
       .catch(() => {
-        const token = localStorage.getItem('token')
+        const token = getStoredToken()
         if (token) {
           return getMe().then((currentUser) => {
             setUser(currentUser)
-            localStorage.setItem('user', JSON.stringify(currentUser))
+            updateStoredUser(currentUser)
           })
         }
       })
       .catch(() => {
-        localStorage.removeItem('token')
-        localStorage.removeItem('user')
+        clearAuthSession()
         setUser(null)
       })
       .finally(() => setLoading(false))
   }, [])
 
-  const loginUser = (token, userData) => {
-    localStorage.setItem('token', token)
-    localStorage.setItem('user', JSON.stringify(userData))
+  const loginUser = (token, userData, remember = false) => {
+    storeAuthSession(token, userData, remember)
     setUser(userData)
   }
 
@@ -57,15 +56,15 @@ export function AuthProvider({ children }) {
     setUser((prev) => {
       const next = prev ? { ...prev, ...updates } : prev
       if (next) {
-        localStorage.setItem('user', JSON.stringify(next))
+        updateStoredUser(next)
       }
       return next
     })
   }
 
   const logout = () => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
+    logoutSession().catch(() => {})
+    clearAuthSession()
     setUser(null)
     // Force full page reload to clear all cached data (React Query, etc.)
     // Prevents settings/data from previous user session leaking

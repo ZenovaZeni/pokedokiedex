@@ -74,3 +74,15 @@ export const me = query({
     }
   },
 })
+
+export const logout = mutation({
+  args: { token: v.string() },
+  handler: async (ctx, args) => {
+    const session = await ctx.db
+      .query('sessions')
+      .withIndex('by_token', (q) => q.eq('token', args.token))
+      .unique()
+    if (session) await ctx.db.delete(session._id)
+    return { ok: true }
+  },
+})

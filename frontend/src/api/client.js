@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { clearAuthSession, getStoredToken } from '../lib/authStorage'
 
 const api = axios.create({
   baseURL: '/api',
@@ -9,7 +10,7 @@ const api = axios.create({
 })
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token')
+  const token = getStoredToken()
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
@@ -20,9 +21,8 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      const token = localStorage.getItem('token')
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
+      const token = getStoredToken()
+      clearAuthSession()
       if (token && window.location.pathname !== '/login') {
         window.location.href = '/login'
       }
@@ -39,6 +39,7 @@ export const login = (username, password) => {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
   }).then(r => r.data)
 }
+export const logoutSession = () => api.post('/auth/logout').then(r => r.data)
 
 export const getMe = () => api.get('/auth/me').then(r => r.data)
 export const getAuthMode = () => api.get('/auth/mode').then(r => r.data)
@@ -141,7 +142,7 @@ export const getProductsSummary = () => api.get('/products/summary')
 
 // Export
 export const exportCSV = () => {
-  const token = localStorage.getItem('token')
+  const token = getStoredToken()
   const config = {
     responseType: 'blob',
   }
@@ -158,7 +159,7 @@ export const exportCSV = () => {
   })
 }
 export const exportPDF = () => {
-  const token = localStorage.getItem('token')
+  const token = getStoredToken()
   const config = {
     responseType: 'blob',
   }
@@ -177,7 +178,7 @@ export const exportPDF = () => {
 
 // Backup
 export const downloadBackup = (include = 'full') => {
-  const token = localStorage.getItem('token')
+  const token = getStoredToken()
   const config = {
     responseType: 'blob',
     params: { include },
@@ -210,7 +211,7 @@ export const setSetting = (key, value) => api.post(`/settings/${key}`, { value }
 export const getTelegramStatus = () => api.get('/settings/telegram_status').then(r => r.data)
 
 export const downloadDebugLog = () => {
-  const token = localStorage.getItem('token')
+  const token = getStoredToken()
   const config = { responseType: 'blob' }
   if (token) {
     config.headers = { Authorization: `Bearer ${token}` }

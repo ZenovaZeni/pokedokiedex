@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto'
+import { pbkdf2Sync } from 'node:crypto'
 import { ConvexHttpClient } from 'convex/browser'
 import { api as convexApi } from '../convex/_generated/api.js'
 
@@ -61,6 +61,8 @@ const settings = {
 }
 
 function send(res, status, data) {
+  res.setHeader('Cache-Control', 'no-store')
+  res.setHeader('X-Content-Type-Options', 'nosniff')
   res.statusCode = status
   res.setHeader('content-type', 'application/json; charset=utf-8')
   res.setHeader('cache-control', 'no-store')
@@ -84,9 +86,8 @@ async function readBody(req) {
 }
 
 function passwordHash(username, password) {
-  return createHash('sha256')
-    .update(`${username.trim().toLowerCase()}:${password}:pokedokiedex-v1`)
-    .digest('hex')
+  const normalizedUsername = username.trim().toLowerCase()
+  return pbkdf2Sync(password, `pokedokiedex-v2:${normalizedUsername}`, 120000, 32, 'sha256').toString('hex')
 }
 
 async function convexResponse(req, res, path) {
@@ -103,6 +104,14 @@ async function convexResponse(req, res, path) {
     const params = new URLSearchParams(body)
     const username = params.get('username') || ''
     const password = params.get('password') || ''
+    if (!/^[a-zA-Z0-9_.-]{3,32}$/.test(username.trim())) {
+      send(res, 400, { detail: 'Use 3-32 letters, numbers, dots, dashes, or underscores.' })
+      return true
+    }
+    if (password.length < 8) {
+      send(res, 400, { detail: 'Password must be at least 8 characters.' })
+      return true
+    }
     try {
       const data = await convex.mutation(convexApi.accounts.loginOrCreate, {
         username,
@@ -113,6 +122,13 @@ async function convexResponse(req, res, path) {
     } catch (error) {
       send(res, 401, { detail: error.message || 'Login failed' })
     }
+    return true
+  }
+
+  if (path === 'auth/logout') {
+    const token = authToken(req)
+    if (token) await convex.mutation(convexApi.accounts.logout, { token })
+    send(res, 200, { ok: true })
     return true
   }
 

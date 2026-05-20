@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import de from '../i18n/de'
 import en from '../i18n/en'
 import zh from '../i18n/zh'
+import { getStoredToken } from '../lib/authStorage'
 
 const translations = { de, en, zh }
 
@@ -25,7 +26,7 @@ export function SettingsProvider({ children }) {
 
   // Load settings from backend on mount
   useEffect(() => {
-    const token = localStorage.getItem('token')
+    const token = getStoredToken()
     if (!token) { setLoaded(true); return }
     fetch('/api/settings/', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
@@ -57,7 +58,7 @@ export function SettingsProvider({ children }) {
     const next = { ...settings, ...updates }
     setSettings(next)
     try {
-      const token = localStorage.getItem('token')
+      const token = getStoredToken()
       const headers = { 'Content-Type': 'application/json' }
       if (token) headers.Authorization = `Bearer ${token}`
 
