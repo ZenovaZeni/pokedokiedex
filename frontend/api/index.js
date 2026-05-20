@@ -277,6 +277,63 @@ function legacyPasswordHash(username, password) {
     .digest('hex')
 }
 
+function tcgdexId(cardId = '') {
+  return String(cardId).replace(/_en$/, '')
+}
+
+function priceFromPricing(card, key) {
+  const value = card?.pricing?.tcgplayer?.prices?.normal?.[key]
+    ?? card?.pricing?.tcgplayer?.prices?.holofoil?.[key]
+    ?? card?.pricing?.tcgplayer?.prices?.reverseHolofoil?.[key]
+    ?? card?.pricing?.cardmarket?.[key]
+  const number = Number(value)
+  return Number.isFinite(number) ? number : null
+}
+
+function normalizeTcgdexCard(card) {
+  const image = card.image || ''
+  const set = card.set || {}
+  return {
+    id: `${card.id}_en`,
+    tcg_card_id: card.id,
+    name: card.name,
+    set_id: set.id || '',
+    number: card.localId || '',
+    rarity: card.rarity || '',
+    types: card.types || [],
+    supertype: card.category || '',
+    hp: card.hp ? String(card.hp) : '',
+    artist: card.illustrator || '',
+    images_small: image ? `${image}/low.webp` : '',
+    images_large: image ? `${image}/high.webp` : '',
+    lang: 'en',
+    price_market: priceFromPricing(card, 'market') ?? priceFromPricing(card, 'trend') ?? priceFromPricing(card, 'avg'),
+    price_low: priceFromPricing(card, 'low'),
+    price_mid: priceFromPricing(card, 'mid'),
+    price_high: priceFromPricing(card, 'high'),
+    price_trend: priceFromPricing(card, 'trend') ?? priceFromPricing(card, 'market'),
+    price_avg1: priceFromPricing(card, 'avg1'),
+    price_avg7: priceFromPricing(card, 'avg7'),
+    price_avg30: priceFromPricing(card, 'avg30'),
+    set_ref: {
+      id: set.id ? `${set.id}_en` : '',
+      tcg_set_id: set.id || '',
+      name: set.name || '',
+      series: set.serie?.name || set.series || '',
+      abbreviation: set.abbreviation?.official || '',
+      images_logo: set.logo ? `${set.logo}.webp` : '',
+      images_symbol: set.symbol ? `${set.symbol}.webp` : '',
+    },
+  }
+}
+
+async function fetchCardForCollection(cardId) {
+  const id = tcgdexId(cardId)
+  const response = await fetch(`https://api.tcgdex.net/v2/en/cards/${encodeURIComponent(id)}`)
+  if (!response.ok) throw new Error('Card was not found in the US card catalog.')
+  return normalizeTcgdexCard(await response.json())
+}
+
 async function convexResponse(req, res, path) {
   const convex = convexClient()
   if (!convex) return false
@@ -305,7 +362,6 @@ async function convexResponse(req, res, path) {
         passwordHash: passwordHash(username, password),
         legacyPasswordHash: legacyPasswordHash(username, password),
       })
-      await convex.mutation(convexApi.cards.seedForUser, { token: data.access_token })
       send(res, 200, data)
     } catch (error) {
       send(res, 401, { detail: error.message || 'Login failed' })
@@ -342,6 +398,57 @@ async function convexResponse(req, res, path) {
       send(res, 200, await convex.query(convexApi.cards.collection, { token }))
       return true
     }
+    if (req.method === 'POST') {
+      try {
+        const body = JSON.parse(await readBody(req) || '{}')
+        const card = await fetchCardForCollection(body.card_id)
+        const item = await convex.mutation(convexApi.cards.addCollectionItem, {
+          token,
+          cardId: card.id,
+          quantity: Number(body.quantity || 1),
+          condition: body.condition || 'NM',
+          variant: body.variant || undefined,
+          purchasePrice: body.purchase_price == null ? undefined : Number(body.purchase_price),
+          card,
+        })
+        send(res, 200, item)
+      } catch (error) {
+        send(res, 400, { detail: error.message || 'Could not add card to collection' })
+      }
+      return true
+    }
+  }
+
+  if (path === 'collection/bulk-add' && req.method === 'POST') {
+    const body = JSON.parse(await readBody(req) || '{}')
+    const items = Array.isArray(body.items) ? body.items : []
+    const prepared = []
+    const failedItems = []
+
+    for (const item of items) {
+      try {
+        prepared.push({
+          cardId: `${tcgdexId(item.card_id)}_en`,
+          quantity: Number(item.quantity || 1),
+          condition: item.condition || 'NM',
+          variant: item.variant || undefined,
+          purchasePrice: item.purchase_price == null ? undefined : Number(item.purchase_price),
+          card: await fetchCardForCollection(item.card_id),
+        })
+      } catch (error) {
+        failedItems.push({ card_id: item.card_id, error: error.message || 'Card lookup failed' })
+      }
+    }
+
+    const result = prepared.length
+      ? await convex.mutation(convexApi.cards.bulkAddCollectionItems, { token, items: prepared })
+      : { added: 0, updated: 0 }
+    send(res, 200, {
+      ...result,
+      failed: failedItems.length,
+      failed_items: failedItems,
+    })
+    return true
   }
 
   if (path.startsWith('collection/') && req.method === 'PUT') {
@@ -353,6 +460,15 @@ async function convexResponse(req, res, path) {
       condition: body.condition || 'NM',
       variant: body.variant || '',
       purchase_price: body.purchase_price == null ? undefined : Number(body.purchase_price),
+    })
+    send(res, 200, { ok: true })
+    return true
+  }
+
+  if (path.startsWith('collection/') && req.method === 'DELETE') {
+    await convex.mutation(convexApi.cards.deleteCollectionItem, {
+      token,
+      id: path.split('/')[1],
     })
     send(res, 200, { ok: true })
     return true
@@ -380,7 +496,7 @@ export default async function handler(req, res) {
   if (await convexResponse(req, res, path)) return
 
   if (req.method === 'OPTIONS') return send(res, 200, {})
-  if (req.method !== 'GET' && req.method !== 'POST' && req.method !== 'PUT') {
+  if (req.method !== 'GET' && req.method !== 'POST' && req.method !== 'PUT' && req.method !== 'DELETE') {
     return send(res, 405, { detail: 'Method not allowed in demo mode' })
   }
 

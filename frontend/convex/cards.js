@@ -41,6 +41,49 @@ async function userFromToken(ctx, token) {
   return session?.userId || null
 }
 
+function cleanVariant(variant) {
+  return variant || ''
+}
+
+async function findCollectionRow(ctx, userId, cardId, variant) {
+  const rows = await ctx.db
+    .query('collection')
+    .withIndex('by_user', (q) => q.eq('userId', userId))
+    .collect()
+  return rows.find((row) => row.cardId === cardId && cleanVariant(row.variant) === cleanVariant(variant)) || null
+}
+
+async function addItem(ctx, userId, item) {
+  const existing = await findCollectionRow(ctx, userId, item.cardId, item.variant)
+  const quantity = Math.max(1, Math.floor(item.quantity || 1))
+  const purchasePrice = typeof item.purchasePrice === 'number' && Number.isFinite(item.purchasePrice)
+    ? item.purchasePrice
+    : undefined
+
+  if (existing) {
+    await ctx.db.patch(existing._id, {
+      quantity: existing.quantity + quantity,
+      condition: item.condition || existing.condition || 'NM',
+      variant: item.variant || existing.variant,
+      purchasePrice: purchasePrice ?? existing.purchasePrice,
+      card: item.card || existing.card,
+    })
+    return { id: existing._id, status: 'updated' }
+  }
+
+  const id = await ctx.db.insert('collection', {
+    userId,
+    cardId: item.cardId,
+    quantity,
+    condition: item.condition || 'NM',
+    variant: item.variant || undefined,
+    purchasePrice,
+    addedAt: Date.now(),
+    card: item.card,
+  })
+  return { id, status: 'added' }
+}
+
 export const seedForUser = mutation({
   args: { token: v.string() },
   handler: async (ctx, args) => {
@@ -63,6 +106,50 @@ export const seedForUser = mutation({
       addedAt: Date.now(),
       card: sampleCard,
     })
+  },
+})
+
+export const addCollectionItem = mutation({
+  args: {
+    token: v.string(),
+    cardId: v.string(),
+    quantity: v.number(),
+    condition: v.string(),
+    variant: v.optional(v.string()),
+    purchasePrice: v.optional(v.number()),
+    card: v.any(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await userFromToken(ctx, args.token)
+    if (!userId) throw new Error('Unauthorized')
+    return await addItem(ctx, userId, args)
+  },
+})
+
+export const bulkAddCollectionItems = mutation({
+  args: {
+    token: v.string(),
+    items: v.array(v.object({
+      cardId: v.string(),
+      quantity: v.number(),
+      condition: v.string(),
+      variant: v.optional(v.string()),
+      purchasePrice: v.optional(v.number()),
+      card: v.any(),
+    })),
+  },
+  handler: async (ctx, args) => {
+    const userId = await userFromToken(ctx, args.token)
+    if (!userId) throw new Error('Unauthorized')
+
+    let added = 0
+    let updated = 0
+    for (const item of args.items) {
+      const result = await addItem(ctx, userId, item)
+      if (result.status === 'added') added += 1
+      if (result.status === 'updated') updated += 1
+    }
+    return { added, updated }
   },
 })
 
@@ -144,6 +231,21 @@ export const updateCollectionItem = mutation({
       variant: args.variant,
       purchasePrice: args.purchase_price,
     })
+    return { ok: true }
+  },
+})
+
+export const deleteCollectionItem = mutation({
+  args: {
+    token: v.string(),
+    id: v.id('collection'),
+  },
+  handler: async (ctx, args) => {
+    const userId = await userFromToken(ctx, args.token)
+    if (!userId) throw new Error('Unauthorized')
+    const row = await ctx.db.get(args.id)
+    if (!row || row.userId !== userId) throw new Error('Not found')
+    await ctx.db.delete(args.id)
     return { ok: true }
   },
 })
