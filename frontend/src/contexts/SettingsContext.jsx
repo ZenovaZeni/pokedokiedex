@@ -6,7 +6,7 @@ import zh from '../i18n/zh'
 const translations = { de, en, zh }
 
 const DEFAULT_SETTINGS = {
-  language: 'de',
+  language: 'en',
   price_display: '["trend", "avg1", "avg7", "avg30", "low"]',
   price_primary: 'trend',
   tcgdex_sync_languages: 'en,de',
@@ -75,8 +75,8 @@ export function SettingsProvider({ children }) {
     }
   }, [settings])
 
-  const lang = settings.language || 'de'
-  const msgs = translations[lang] || translations.de
+  const lang = settings.language || 'en'
+  const msgs = translations[lang] || translations.en
 
   // Translation helper
   const t = useCallback((path) => {
@@ -87,8 +87,8 @@ export function SettingsProvider({ children }) {
       if (val === undefined) break
     }
     if (val === undefined) {
-      // Fallback to German
-      let fallback = translations.de
+      // Fallback to English
+      let fallback = translations.en
       for (const part of parts) {
         fallback = fallback?.[part]
         if (fallback === undefined) break

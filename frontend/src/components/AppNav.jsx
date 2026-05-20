@@ -68,7 +68,8 @@ export default function AppNav() {
       <button
         onClick={() => navigate('/')}
         aria-label={t('home.navigation')}
-        className="fixed bottom-6 left-4 z-50 w-12 h-12 rounded-full flex items-center justify-center
+        className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom,0px)+0.75rem)] left-4 z-50 w-12 h-12 rounded-full flex items-center justify-center
+          lg:bottom-6
           transition-all duration-200 active:scale-90 hover:scale-110"
         style={{
           background: 'linear-gradient(180deg, #e3000b 50%, #f5f5f5 50%)',
