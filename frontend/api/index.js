@@ -65,7 +65,7 @@ function send(res, status, data) {
 
 export default function handler(req, res) {
   const url = new URL(req.url, 'https://pokedokiedex.vercel.app')
-  const path = url.pathname.replace(/^\/api\/?/, '').replace(/\/$/, '')
+  const path = (url.searchParams.get('path') || '').replace(/\/$/, '')
 
   if (req.method === 'OPTIONS') return send(res, 200, {})
   if (req.method !== 'GET' && req.method !== 'POST' && req.method !== 'PUT') {
