@@ -63,9 +63,8 @@ export default function Landing() {
           <div className="relative mx-auto w-full max-w-3xl">
             <div className="absolute -inset-5 rounded-[2rem] bg-brand-red/10 blur-3xl" />
             <picture>
-              <source srcSet="/brand/dokiedex-hero.webp" type="image/webp" />
               <img
-                src="/brand/dokiedex-hero.png"
+                src="/brand/dokiedex-hero.svg"
                 alt="A goofy original card-scanner mascot guarding a fictional card collection dashboard."
                 className="relative aspect-[1717/916] w-full rounded-[1.5rem] border border-border object-cover object-center shadow-2xl"
                 fetchPriority="high"

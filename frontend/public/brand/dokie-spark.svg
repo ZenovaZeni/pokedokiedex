@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Spark Dokie mascot">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="44%" r="58%">
+      <stop stop-color="#fff7a8"/>
+      <stop offset=".53" stop-color="#f5c842"/>
+      <stop offset="1" stop-color="#c66a12"/>
+    </radialGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="22" stdDeviation="18" flood-color="#000" flood-opacity=".42"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <path d="M151 107c-15 58 6 102 57 132 12-60-7-104-57-132z" fill="#f6c63d" stroke="#08080f" stroke-width="20" stroke-linejoin="round"/>
+    <path d="M360 95c19 60 1 107-53 141-16-62 1-109 53-141z" fill="#f6c63d" stroke="#08080f" stroke-width="20" stroke-linejoin="round"/>
+    <path d="M148 174c-51 84-11 221 92 244 108 25 205-53 190-167-12-93-93-142-184-132-47 5-81 23-98 55z" fill="url(#glow)" stroke="#08080f" stroke-width="22" stroke-linejoin="round"/>
+    <path d="M186 326c36 63 152 65 202-7-4 65-44 105-109 108-61 2-96-34-93-101z" fill="#fff0bf"/>
+    <path d="M135 276c-35 16-55 42-60 78 45 8 79-4 102-36z" fill="#e3000b" stroke="#08080f" stroke-width="15" stroke-linejoin="round"/>
+    <path d="M388 268c40 10 66 33 79 69-42 14-78 6-107-23z" fill="#e3000b" stroke="#08080f" stroke-width="15" stroke-linejoin="round"/>
+    <circle cx="211" cy="252" r="25" fill="#08080f"/>
+    <circle cx="320" cy="246" r="25" fill="#08080f"/>
+    <circle cx="221" cy="241" r="8" fill="#fff"/>
+    <circle cx="330" cy="235" r="8" fill="#fff"/>
+    <path d="M247 301c26 18 55 17 82-3" fill="none" stroke="#08080f" stroke-width="15" stroke-linecap="round"/>
+    <path d="M389 169l76-38-33 80 48 18-98 68 35-79-45-24z" fill="#f5c842" stroke="#08080f" stroke-width="15" stroke-linejoin="round"/>
+  </g>
+</svg>

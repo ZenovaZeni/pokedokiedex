@@ -1,10 +1,10 @@
-const PALETTES = [
-  ['#e3000b', '#f5c842', '#08080f'],
-  ['#4fc3f7', '#7b23d2', '#f5f6fa'],
-  ['#22c55e', '#f5c842', '#08080f'],
-  ['#ff6b35', '#3b82f6', '#f5f6fa'],
-  ['#ce93d8', '#e3000b', '#08080f'],
-  ['#78909c', '#f5c842', '#f5f6fa'],
+const CREATURES = [
+  { body: '#f5c842', belly: '#fff0bf', cheek: '#e3000b', accent: '#08080f', horn: '#f5c842' },
+  { body: '#4fc3f7', belly: '#e6fbff', cheek: '#7b23d2', accent: '#101827', horn: '#f5f6fa' },
+  { body: '#22c55e', belly: '#d9ffe9', cheek: '#f5c842', accent: '#082014', horn: '#72dd9b' },
+  { body: '#ff7a36', belly: '#ffe6cf', cheek: '#e3000b', accent: '#1f1210', horn: '#f5c842' },
+  { body: '#ce93d8', belly: '#fff0ff', cheek: '#f5c842', accent: '#160b20', horn: '#f5f6fa' },
+  { body: '#f5f6fa', belly: '#dce6f7', cheek: '#4fc3f7', accent: '#08080f', horn: '#f5c842' },
 ]
 
 export default function CollectorAvatar({
@@ -13,37 +13,28 @@ export default function CollectorAvatar({
   className = 'h-10 w-10',
 }) {
   const numericId = Math.max(0, Number(avatarId) || 0)
-  const palette = PALETTES[numericId % PALETTES.length]
-  const rotation = (numericId * 23) % 360
-  const offset = (numericId * 11) % 36
+  const creature = CREATURES[numericId % CREATURES.length]
+  const tilt = ((numericId % 5) - 2) * 4
 
   return (
     <div
       className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 ${className}`}
       style={{
-        background: `linear-gradient(${rotation}deg, ${palette[0]}, ${palette[1]})`,
+        background: `radial-gradient(circle at 42% 34%, ${creature.body}33, transparent 42%), linear-gradient(145deg, #14101d, #08080f)`,
       }}
       role="img"
       aria-label={`${username} avatar`}
       title={username}
     >
-      <span
-        className="absolute rounded-full bg-white/85"
-        style={{ width: '48%', height: '48%', left: `${12 + offset / 3}%`, top: `${14 + offset / 4}%` }}
-      />
-      <span
-        className="absolute rounded-lg"
-        style={{
-          width: '58%',
-          height: '18%',
-          background: palette[2],
-          transform: `rotate(${rotation / 4}deg)`,
-        }}
-      />
-      <span
-        className="absolute rounded-full border-2 border-white/80"
-        style={{ width: '30%', height: '30%', right: '16%', bottom: '14%' }}
-      />
+      <span className="absolute bottom-[13%] h-[64%] w-[68%] rounded-[48%_48%_42%_42%] border-2 border-black/80" style={{ background: creature.body, transform: `rotate(${tilt}deg)` }} />
+      <span className="absolute left-[22%] top-[14%] h-[33%] w-[18%] -rotate-[27deg] rounded-[70%_70%_25%_25%] border-2 border-black/80" style={{ background: creature.horn }} />
+      <span className="absolute right-[21%] top-[14%] h-[33%] w-[18%] rotate-[27deg] rounded-[70%_70%_25%_25%] border-2 border-black/80" style={{ background: creature.horn }} />
+      <span className="absolute bottom-[13%] h-[28%] w-[44%] rounded-[50%_50%_42%_42%]" style={{ background: creature.belly }} />
+      <span className="absolute left-[32%] top-[43%] h-[10%] w-[10%] rounded-full" style={{ background: creature.accent }} />
+      <span className="absolute right-[32%] top-[43%] h-[10%] w-[10%] rounded-full" style={{ background: creature.accent }} />
+      <span className="absolute left-[27%] top-[54%] h-[12%] w-[14%] rounded-full opacity-90" style={{ background: creature.cheek }} />
+      <span className="absolute right-[27%] top-[54%] h-[12%] w-[14%] rounded-full opacity-90" style={{ background: creature.cheek }} />
+      <span className="absolute top-[59%] h-[8%] w-[18%] rounded-b-full border-b-2" style={{ borderColor: creature.accent }} />
     </div>
   )
 }

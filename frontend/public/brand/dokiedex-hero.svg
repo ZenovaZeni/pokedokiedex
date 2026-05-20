@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1717 916" role="img" aria-label="Original PokeDokieDex mascot with fictional collectible cards">
+  <defs>
+    <linearGradient id="sky" x1="121" x2="1516" y1="-22" y2="968" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#20152f"/>
+      <stop offset=".45" stop-color="#08080f"/>
+      <stop offset="1" stop-color="#260e15"/>
+    </linearGradient>
+    <radialGradient id="spot" cx="50%" cy="45%" r="52%">
+      <stop stop-color="#fff2a3"/>
+      <stop offset=".53" stop-color="#f5c842"/>
+      <stop offset="1" stop-color="#cc7a16"/>
+    </radialGradient>
+    <filter id="cardShadow" x="-20%" y="-20%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="28" stdDeviation="28" flood-color="#000" flood-opacity=".5"/>
+    </filter>
+  </defs>
+  <rect width="1717" height="916" fill="url(#sky)"/>
+  <circle cx="287" cy="137" r="221" fill="#f5c842" opacity=".13"/>
+  <circle cx="1395" cy="196" r="246" fill="#e3000b" opacity=".13"/>
+  <circle cx="891" cy="846" r="409" fill="#4fc3f7" opacity=".08"/>
+  <g opacity=".24" stroke="#f5f6fa" stroke-width="2">
+    <path d="M110 693c280-58 513-63 807-10 253 45 436 39 689-42"/>
+    <path d="M60 740c338-47 582-25 821 26 273 58 479 37 779-71"/>
+  </g>
+  <g filter="url(#cardShadow)">
+    <g transform="translate(228 188) rotate(-10)">
+      <rect width="260" height="362" rx="26" fill="#f5f6fa"/>
+      <rect x="18" y="18" width="224" height="326" rx="18" fill="#111522"/>
+      <rect x="35" y="35" width="190" height="170" rx="16" fill="#27133d"/>
+      <path d="M75 151c23-47 77-81 127-44 4 62-71 104-127 44z" fill="#72dd9b"/>
+      <circle cx="120" cy="113" r="15" fill="#08080f"/>
+      <circle cx="169" cy="114" r="15" fill="#08080f"/>
+      <rect x="35" y="228" width="170" height="16" rx="8" fill="#f5c842"/>
+      <rect x="35" y="262" width="196" height="10" rx="5" fill="#f5f6fa" opacity=".55"/>
+      <rect x="35" y="286" width="136" height="10" rx="5" fill="#f5f6fa" opacity=".34"/>
+    </g>
+    <g transform="translate(1198 222) rotate(9)">
+      <rect width="260" height="362" rx="26" fill="#f5f6fa"/>
+      <rect x="18" y="18" width="224" height="326" rx="18" fill="#111522"/>
+      <rect x="35" y="35" width="190" height="170" rx="16" fill="#311018"/>
+      <path d="M88 164c-29-62 7-111 60-113 53 3 91 54 63 113-31 31-90 33-123 0z" fill="#ff7a36"/>
+      <path d="M113 119l36-52 35 52-36 28z" fill="#f5c842"/>
+      <circle cx="125" cy="128" r="12" fill="#08080f"/>
+      <circle cx="171" cy="128" r="12" fill="#08080f"/>
+      <rect x="35" y="228" width="158" height="16" rx="8" fill="#e3000b"/>
+      <rect x="35" y="262" width="196" height="10" rx="5" fill="#f5f6fa" opacity=".55"/>
+      <rect x="35" y="286" width="121" height="10" rx="5" fill="#f5f6fa" opacity=".34"/>
+    </g>
+  </g>
+  <g transform="translate(613 70)" filter="url(#cardShadow)">
+    <path d="M117 77c-34 130 13 228 128 294 27-133-16-232-128-294z" fill="#f5c842" stroke="#08080f" stroke-width="35" stroke-linejoin="round"/>
+    <path d="M580 51c43 136 2 240-119 317-36-140 3-245 119-317z" fill="#f5c842" stroke="#08080f" stroke-width="35" stroke-linejoin="round"/>
+    <path d="M120 230C6 418 96 724 326 777c242 55 459-119 426-373-28-210-209-319-412-296-105 11-181 51-220 122z" fill="url(#spot)" stroke="#08080f" stroke-width="39" stroke-linejoin="round"/>
+    <path d="M207 574c81 141 341 146 452-15-9 146-99 236-244 242-137 5-216-77-208-227z" fill="#fff0bf"/>
+    <path d="M91 462c-78 36-123 95-134 174 100 17 177-10 228-82z" fill="#e3000b" stroke="#08080f" stroke-width="28" stroke-linejoin="round"/>
+    <path d="M660 443c89 22 148 73 177 154-95 32-177 15-241-52z" fill="#e3000b" stroke="#08080f" stroke-width="28" stroke-linejoin="round"/>
+    <circle cx="262" cy="407" r="45" fill="#08080f"/>
+    <circle cx="506" cy="394" r="45" fill="#08080f"/>
+    <circle cx="282" cy="386" r="14" fill="#fff"/>
+    <circle cx="526" cy="373" r="14" fill="#fff"/>
+    <path d="M342 510c58 40 123 38 183-7" fill="none" stroke="#08080f" stroke-width="27" stroke-linecap="round"/>
+    <path d="M652 226l170-85-74 179 108 41-220 151 78-176-100-54z" fill="#f5c842" stroke="#08080f" stroke-width="28" stroke-linejoin="round"/>
+  </g>
+  <g transform="translate(746 682)">
+    <rect x="0" y="0" width="300" height="84" rx="42" fill="#08080f" stroke="#f5c842" stroke-width="4"/>
+    <circle cx="60" cy="42" r="22" fill="#e3000b"/>
+    <path d="M95 31h130" stroke="#f5f6fa" stroke-width="11" stroke-linecap="round"/>
+    <path d="M95 55h89" stroke="#f5f6fa" stroke-opacity=".45" stroke-width="10" stroke-linecap="round"/>
+  </g>
+</svg>

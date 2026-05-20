@@ -1,11 +1,12 @@
-const CACHE_NAME = 'pokedokiedex-shell-v1'
+const CACHE_NAME = 'pokedokiedex-shell-v2'
 const CORE_ASSETS = [
   '/',
   '/manifest.json',
   '/dokiedex-mark.svg',
   '/icon-192.png',
   '/icon-512.png',
-  '/brand/dokiedex-hero.webp',
+  '/brand/dokiedex-hero.svg',
+  '/brand/dokie-spark.svg',
 ]
 
 self.addEventListener('install', (event) => {
