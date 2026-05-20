@@ -574,6 +574,29 @@ function roundProgress(cards) {
 
 async function tcgdexResponse(req, res, path, url) {
   try {
+    const cardImageMatch = /^images\/card\/([^/]+)\/(small|large)$/.exec(path)
+    if (cardImageMatch && req.method === 'GET') {
+      const [, rawCardId, size] = cardImageMatch
+      const card = await tcgdexJson(`cards/${encodeURIComponent(tcgdexId(decodeURIComponent(rawCardId)))}`)
+      const imageBase = card.image || ''
+      if (!imageBase) throw new Error('Card image is not available.')
+      res.statusCode = 302
+      res.setHeader('location', `${imageBase}/${size === 'large' ? 'high' : 'low'}.webp`)
+      return res.end()
+    }
+
+    const setImageMatch = /^images\/set\/([^/]+)\/(logo|symbol)$/.exec(path)
+    if (setImageMatch && req.method === 'GET') {
+      const [, rawSetId, imageType] = setImageMatch
+      const setId = decodeURIComponent(rawSetId).replace(/_en$/, '')
+      const set = await tcgdexJson(`sets/${encodeURIComponent(setId)}`)
+      const imageBase = imageType === 'logo' ? set.logo : set.symbol
+      if (!imageBase) throw new Error('Set image is not available.')
+      res.statusCode = 302
+      res.setHeader('location', withWebp(imageBase))
+      return res.end()
+    }
+
     if (path === 'cards/search' && req.method === 'GET') {
       send(res, 200, await searchTcgdexCards(url))
       return true

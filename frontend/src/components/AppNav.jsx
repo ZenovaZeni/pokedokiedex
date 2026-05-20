@@ -2,7 +2,6 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { LogOut } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useSettings } from '../contexts/SettingsContext'
-import CollectorAvatar from './CollectorAvatar'
 
 const PAGE_TITLE_KEYS = {
   '/collection': 'nav.collection',
@@ -19,6 +18,32 @@ const PAGE_TITLE_KEYS = {
   '/dashboard': 'nav.dashboard',
   '/ebay': 'nav.ebayMarket',
   '/legal': 'nav.legal',
+}
+
+function ElectricMouseMascot() {
+  return (
+    <span
+      className="relative flex h-7 w-7 shrink-0 items-center justify-center"
+      aria-hidden="true"
+    >
+      <span className="absolute left-1 top-0 h-3 w-2 -rotate-[28deg] rounded-[70%_70%_30%_30%] bg-yellow" />
+      <span className="absolute right-1 top-0 h-3 w-2 rotate-[28deg] rounded-[70%_70%_30%_30%] bg-yellow" />
+      <span
+        className="relative h-5 w-6 rounded-full border border-yellow/60 bg-yellow shadow-[0_0_16px_rgba(245,200,66,0.38)]"
+        style={{ animation: 'mascot-bob 1.8s ease-in-out infinite' }}
+      >
+        <span className="absolute left-1.5 top-1.5 h-1 w-1 rounded-full bg-black" />
+        <span className="absolute right-1.5 top-1.5 h-1 w-1 rounded-full bg-black" />
+        <span className="absolute left-0.5 top-2.5 h-1.5 w-1.5 rounded-full bg-brand-red/70" />
+        <span className="absolute right-0.5 top-2.5 h-1.5 w-1.5 rounded-full bg-brand-red/70" />
+        <span className="absolute left-1/2 top-2.5 h-1 w-1 -translate-x-1/2 rounded-full bg-black" />
+      </span>
+      <span
+        className="absolute -right-1 top-3 h-2.5 w-3 border-r-2 border-t-2 border-yellow"
+        style={{ transform: 'rotate(35deg)', animation: 'mascot-tail 1.8s ease-in-out infinite' }}
+      />
+    </span>
+  )
 }
 
 export default function AppNav() {
@@ -56,7 +81,7 @@ export default function AppNav() {
               className="pointer-events-auto flex h-8 min-w-8 items-center justify-center gap-1.5 rounded-lg px-1.5 text-text-muted transition-colors hover:text-brand-red"
               aria-label={t('auth.logout')}
             >
-              {user?.avatar_id ? <CollectorAvatar avatarId={user.avatar_id} username={user.username} className="h-5 w-5 rounded-md" /> : null}
+              <ElectricMouseMascot />
               <LogOut size={16} />
             </button>
           ) : (

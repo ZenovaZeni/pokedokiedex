@@ -62,6 +62,16 @@ input:-webkit-autofill:focus {
 }
 
 /* ─── Base Typography — word-wrap everywhere ─────────────────────────────── */
+@keyframes mascot-bob {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-2px) rotate(2deg); }
+}
+
+@keyframes mascot-tail {
+  0%, 100% { transform: rotate(28deg) translateY(0); }
+  50% { transform: rotate(42deg) translateY(-1px); }
+}
+
 @layer base {
   html {
     font-size: 16px;
