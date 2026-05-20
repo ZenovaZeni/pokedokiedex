@@ -60,6 +60,11 @@ const settings = {
   debug_mode: 'false',
 }
 
+let ebayTokenCache = {
+  token: '',
+  expiresAt: 0,
+}
+
 function send(res, status, data) {
   res.setHeader('Cache-Control', 'no-store')
   res.setHeader('X-Content-Type-Options', 'nosniff')
@@ -67,6 +72,182 @@ function send(res, status, data) {
   res.setHeader('content-type', 'application/json; charset=utf-8')
   res.setHeader('cache-control', 'no-store')
   res.end(JSON.stringify(data))
+}
+
+function ebayConfig() {
+  const clientId = process.env.EBAY_CLIENT_ID || ''
+  const clientSecret = process.env.EBAY_CLIENT_SECRET || ''
+  const env = (process.env.EBAY_ENV || 'production').toLowerCase()
+  const marketplaceId = process.env.EBAY_MARKETPLACE_ID || 'EBAY_US'
+  const apiBase = env === 'sandbox' ? 'https://api.sandbox.ebay.com' : 'https://api.ebay.com'
+
+  return {
+    clientId,
+    clientSecret,
+    env,
+    marketplaceId,
+    apiBase,
+    configured: Boolean(clientId && clientSecret),
+  }
+}
+
+async function getEbayAccessToken(config) {
+  const now = Date.now()
+  if (ebayTokenCache.token && ebayTokenCache.expiresAt > now + 60000) {
+    return ebayTokenCache.token
+  }
+
+  const credentials = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64')
+  const body = new URLSearchParams({
+    grant_type: 'client_credentials',
+    scope: 'https://api.ebay.com/oauth/api_scope',
+  })
+
+  const response = await fetch(`${config.apiBase}/identity/v1/oauth2/token`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Basic ${credentials}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body,
+  })
+
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok) {
+    throw new Error(data.error_description || data.error || 'eBay authentication failed')
+  }
+
+  ebayTokenCache = {
+    token: data.access_token,
+    expiresAt: now + Math.max(60, Number(data.expires_in || 7200) - 120) * 1000,
+  }
+  return ebayTokenCache.token
+}
+
+function moneyValue(amount) {
+  if (!amount) return null
+  const value = Number(amount.value)
+  if (!Number.isFinite(value)) return null
+  return {
+    value,
+    currency: amount.currency || 'USD',
+    display: new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: amount.currency || 'USD',
+    }).format(value),
+  }
+}
+
+function summarizeEbayItems(items = []) {
+  const prices = items
+    .map((item) => Number(item.price?.value))
+    .filter((value) => Number.isFinite(value))
+    .sort((a, b) => a - b)
+
+  if (!prices.length) return { count: items.length, min: null, median: null, max: null }
+
+  const middle = Math.floor(prices.length / 2)
+  const median = prices.length % 2 ? prices[middle] : (prices[middle - 1] + prices[middle]) / 2
+
+  return {
+    count: items.length,
+    min: prices[0],
+    median,
+    max: prices[prices.length - 1],
+  }
+}
+
+async function ebayResponse(req, res, path, url) {
+  if (path === 'ebay/status') {
+    const config = ebayConfig()
+    send(res, 200, {
+      configured: config.configured,
+      marketplace_id: config.marketplaceId,
+      environment: config.env,
+    })
+    return true
+  }
+
+  if (path !== 'ebay/search') return false
+
+  if (req.method !== 'GET') {
+    send(res, 405, { detail: 'Method not allowed' })
+    return true
+  }
+
+  const config = ebayConfig()
+  if (!config.configured) {
+    send(res, 503, {
+      detail: 'eBay API is not configured yet.',
+      code: 'EBAY_NOT_CONFIGURED',
+      required_env: ['EBAY_CLIENT_ID', 'EBAY_CLIENT_SECRET'],
+      optional_env: ['EBAY_MARKETPLACE_ID', 'EBAY_ENV'],
+    })
+    return true
+  }
+
+  const q = (url.searchParams.get('q') || '').trim().replace(/\s+/g, ' ')
+  const limit = Math.min(20, Math.max(1, Number(url.searchParams.get('limit') || 8)))
+  if (q.length < 2) {
+    send(res, 400, { detail: 'Search query must be at least 2 characters.' })
+    return true
+  }
+
+  try {
+    const token = await getEbayAccessToken(config)
+    const searchUrl = new URL(`${config.apiBase}/buy/browse/v1/item_summary/search`)
+    searchUrl.searchParams.set('q', q)
+    searchUrl.searchParams.set('limit', String(limit))
+    searchUrl.searchParams.set('sort', 'price')
+
+    const response = await fetch(searchUrl, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'X-EBAY-C-MARKETPLACE-ID': config.marketplaceId,
+      },
+    })
+    const data = await response.json().catch(() => ({}))
+
+    if (!response.ok) {
+      send(res, response.status, {
+        detail: data.errors?.[0]?.message || data.message || 'eBay search failed',
+        code: 'EBAY_SEARCH_FAILED',
+      })
+      return true
+    }
+
+    const items = (data.itemSummaries || []).map((item) => ({
+      id: item.itemId,
+      title: item.title,
+      url: item.itemWebUrl,
+      image: item.image?.imageUrl || item.thumbnailImages?.[0]?.imageUrl || '',
+      price: moneyValue(item.price),
+      shipping: moneyValue(item.shippingOptions?.[0]?.shippingCost),
+      condition: item.condition,
+      buyingOptions: item.buyingOptions || [],
+      itemEndDate: item.itemEndDate,
+      seller: item.seller
+        ? {
+            username: item.seller.username,
+            feedbackPercentage: item.seller.feedbackPercentage,
+            feedbackScore: item.seller.feedbackScore,
+          }
+        : null,
+    }))
+
+    send(res, 200, {
+      query: q,
+      source: 'eBay Browse API active listings',
+      marketplace_id: config.marketplaceId,
+      total: data.total || items.length,
+      summary: summarizeEbayItems(items),
+      items,
+    })
+    return true
+  } catch (error) {
+    send(res, 502, { detail: error.message || 'eBay request failed', code: 'EBAY_REQUEST_FAILED' })
+    return true
+  }
 }
 
 function authToken(req) {
@@ -193,6 +374,8 @@ async function convexResponse(req, res, path) {
 export default async function handler(req, res) {
   const url = new URL(req.url, 'https://pokedokiedex.vercel.app')
   const path = (url.searchParams.get('path') || '').replace(/\/$/, '')
+
+  if (await ebayResponse(req, res, path, url)) return
 
   if (await convexResponse(req, res, path)) return
 

@@ -13,6 +13,7 @@ const en = {
     leaderboard: 'Leaderboard',
     achievements: 'Achievements',
     products: 'Products',
+    ebayMarket: 'eBay Market',
     settings: 'Settings',
     legal: 'Legal',
     cards: 'Cards',

@@ -22,6 +22,7 @@ import CardMigration from './pages/CardMigration'
 import Login from './pages/Login'
 import Landing from './pages/Landing'
 import AboutLegal from './pages/AboutLegal'
+import EbayMarket from './pages/EbayMarket'
 import Leaderboard from './pages/Leaderboard'
 import Compare from './pages/Compare'
 import Achievements from './pages/Achievements'
@@ -137,6 +138,7 @@ function ProtectedRoutes() {
         <Route path="binders/:binderId" element={<BinderDetail />} />
         <Route path="analytics" element={<Analytics />} />
         <Route path="products" element={<Products />} />
+        <Route path="ebay" element={<EbayMarket />} />
         <Route path="leaderboard" element={<Leaderboard />} />
         <Route path="leaderboard/compare/:userId" element={<Compare />} />
         <Route path="achievements" element={<Achievements />} />

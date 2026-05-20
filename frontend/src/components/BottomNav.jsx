@@ -3,7 +3,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   Search, Library, Grid2X2, MoreHorizontal,
-  Heart, BookOpen, BarChart3, ShoppingBag, Settings, X, Zap, LogOut, Trophy, Award, Scale
+  Heart, BookOpen, BarChart3, ShoppingBag, Settings, X, Zap, LogOut, Trophy, Award, Scale, Store
 } from 'lucide-react'
 import { getCustomMatches } from '../api/client'
 import { useAuth } from '../contexts/AuthContext'
@@ -38,6 +38,7 @@ export default function BottomNav() {
     { to: '/wishlist',   icon: Heart,      label: t('nav.wishlist') },
     { to: '/analytics',  icon: BarChart3,  label: t('nav.analytics') },
     { to: '/products',   icon: ShoppingBag, label: t('nav.products') },
+    { to: '/ebay', icon: Store, label: t('nav.ebayMarket') },
     { to: '/leaderboard', icon: Trophy, label: t('nav.leaderboard') },
     { to: '/achievements', icon: Award, label: t('nav.achievements') },
     { to: '/settings',   icon: Settings,   label: t('nav.settings') },

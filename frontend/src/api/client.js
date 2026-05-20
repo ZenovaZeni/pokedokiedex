@@ -140,6 +140,10 @@ export const updateProduct = (id, data) => api.put(`/products/${id}`, data)
 export const deleteProduct = (id) => api.delete(`/products/${id}`)
 export const getProductsSummary = () => api.get('/products/summary')
 
+// eBay market checks
+export const getEbayStatus = () => api.get('/ebay/status').then(r => r.data)
+export const searchEbayListings = (params) => api.get('/ebay/search', { params }).then(r => r.data)
+
 // Export
 export const exportCSV = () => {
   const token = getStoredToken()

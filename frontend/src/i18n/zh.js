@@ -13,6 +13,7 @@ const zh = {
     leaderboard: '排行榜',
     achievements: '成就',
     products: '产品',
+    ebayMarket: 'eBay Market',
     settings: '设置',
     legal: 'Legal',
     cards: '卡牌',

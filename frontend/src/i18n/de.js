@@ -13,6 +13,7 @@ const de = {
     leaderboard: 'Rangliste',
     achievements: 'Abzeichen',
     products: 'Produkte',
+    ebayMarket: 'eBay Market',
     settings: 'Einstellungen',
     legal: 'Legal',
     cards: 'Karten',
