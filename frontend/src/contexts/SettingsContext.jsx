@@ -1,20 +1,29 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import de from '../i18n/de'
 import en from '../i18n/en'
-import zh from '../i18n/zh'
 import { getStoredToken } from '../lib/authStorage'
 
-const translations = { de, en, zh }
+const translations = { en }
 
 const DEFAULT_SETTINGS = {
   language: 'en',
   currency: 'USD',
   price_display: '["trend", "avg1", "avg7", "avg30", "low"]',
   price_primary: 'trend',
-  tcgdex_sync_languages: 'en,de',
-  cross_language_price_fallback: 'true',
-  cross_language_image_fallback: 'true',
+  tcgdex_sync_languages: 'en',
+  cross_language_price_fallback: 'false',
+  cross_language_image_fallback: 'false',
   debug_mode: 'false',
+}
+
+function normalizeSettings(data = {}) {
+  return {
+    ...data,
+    language: 'en',
+    currency: 'USD',
+    tcgdex_sync_languages: 'en',
+    cross_language_price_fallback: 'false',
+    cross_language_image_fallback: 'false',
+  }
 }
 
 const SettingsContext = createContext(null)
@@ -31,7 +40,7 @@ export function SettingsProvider({ children }) {
     fetch('/api/settings/', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
       .then(data => {
-        setSettings(prev => ({ ...prev, ...data }))
+        setSettings(prev => ({ ...prev, ...normalizeSettings(data) }))
         setLoaded(true)
       })
       .catch(() => {
@@ -55,7 +64,8 @@ export function SettingsProvider({ children }) {
 
   // Update one or more settings
   const updateSettings = useCallback(async (updates) => {
-    const next = { ...settings, ...updates }
+    const safeUpdates = normalizeSettings(updates)
+    const next = { ...settings, ...safeUpdates }
     setSettings(next)
     try {
       const token = getStoredToken()
@@ -65,11 +75,11 @@ export function SettingsProvider({ children }) {
       const resp = await fetch('/api/settings/', {
         method: 'PUT',
         headers,
-        body: JSON.stringify(updates),
+        body: JSON.stringify(safeUpdates),
       })
       if (!resp.ok) throw new Error('Save failed')
       const saved = await resp.json()
-      setSettings(prev => ({ ...prev, ...saved }))
+      setSettings(prev => ({ ...prev, ...normalizeSettings(saved) }))
     } catch (err) {
       setSettings(settings)
       console.error('Failed to save settings:', err)
@@ -77,8 +87,8 @@ export function SettingsProvider({ children }) {
     }
   }, [settings])
 
-  const lang = settings.language || 'en'
-  const msgs = translations[lang] || translations.en
+  const lang = 'en'
+  const msgs = translations.en
 
   // Translation helper
   const t = useCallback((path) => {
@@ -115,7 +125,7 @@ export function SettingsProvider({ children }) {
     return settings.price_primary || 'trend'
   }, [settings.price_primary])
 
-  const currency = settings.currency || 'USD'
+  const currency = 'USD'
   const currencySymbol = currency === 'USD' ? '$' : '€'
 
   const formatPrice = useCallback((eurAmount) => {

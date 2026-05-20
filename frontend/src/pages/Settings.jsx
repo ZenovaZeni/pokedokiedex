@@ -76,91 +76,23 @@ function Toggle({ value, onChange }) {
   )
 }
 
-function SegmentedControl({ value, options, onChange }) {
-  return (
-    <div
-      className="flex w-fit rounded-lg overflow-hidden"
-      style={{ border: '1px solid rgba(255,255,255,0.1)' }}
-    >
-      {options.map((opt, i) => (
-        <button
-          key={opt.value}
-          onClick={() => onChange(opt.value)}
-          className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
-            value === opt.value
-              ? 'bg-brand-red text-white'
-              : 'text-text-muted hover:text-text-primary'
-          } ${i > 0 ? 'border-l border-border' : ''}`}
-        >
-          {opt.label}
-        </button>
-      ))}
-    </div>
-  )
-}
-
 function SelectControl({ value, options, onChange }) {
   return (
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="text-xs font-semibold text-text-primary rounded-lg px-2 py-1.5 outline-none cursor-pointer"
+      className="select text-xs font-semibold rounded-lg px-2 py-1.5 w-auto min-w-[6.25rem]"
       style={{
         background: 'rgba(255,255,255,0.07)',
         border: '1px solid rgba(255,255,255,0.1)',
       }}
     >
       {options.map((opt) => (
-        <option key={opt.value} value={opt.value}>
+        <option key={opt.value} value={opt.value} className="bg-bg-surface text-text-primary">
           {opt.label}
         </option>
       ))}
     </select>
-  )
-}
-
-function TcgdexLanguageControl({ value, onChange, labels }) {
-  const selected = new Set(
-    String(value || 'en,de')
-      .split(',')
-      .map((part) => part.trim().toLowerCase())
-      .filter(Boolean)
-  )
-
-  const toggle = (lang) => {
-    const next = new Set(selected)
-    if (next.has(lang)) {
-      if (next.size === 1) return
-      next.delete(lang)
-    } else {
-      next.add(lang)
-    }
-    onChange(['en', 'de'].filter((item) => next.has(item)).join(','))
-  }
-
-  return (
-    <div
-      className="flex w-fit rounded-lg overflow-hidden"
-      style={{ border: '1px solid rgba(255,255,255,0.1)' }}
-    >
-      {[
-        { value: 'en', label: labels.en },
-        { value: 'de', label: labels.de },
-      ].map((opt, i) => (
-        <button
-          key={opt.value}
-          type="button"
-          onClick={() => toggle(opt.value)}
-          className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
-            selected.has(opt.value)
-              ? 'bg-brand-red text-white'
-              : 'text-text-muted hover:text-text-primary'
-          } ${i > 0 ? 'border-l border-border' : ''}`}
-        >
-          {opt.label}
-        </button>
-      ))}
-    </div>
   )
 }
 
@@ -435,15 +367,6 @@ export default function Settings() {
     await saveSetting('price_alert_threshold', alertThreshold)
   }
 
-  const handleLanguageChange = async (lang) => {
-    try {
-      await updateSettings({ language: lang })
-      toast.success(t('settings.saved'))
-    } catch {
-      toast.error(t('settings.saveFailed'))
-    }
-  }
-
   const handleCurrencyChange = async (val) => {
     try {
       await updateSettings({ currency: val })
@@ -462,15 +385,6 @@ export default function Settings() {
     }
   }
 
-  const handleTcgdexSyncLanguagesChange = async (val) => {
-    try {
-      await updateSettings({ tcgdex_sync_languages: val })
-      toast.success(t('settings.saved'))
-    } catch {
-      toast.error(t('settings.saveFailed'))
-    }
-  }
-
   const handleDebugModeToggle = async (enabled) => {
     setDebugModeEnabled(enabled)
     try {
@@ -479,15 +393,6 @@ export default function Settings() {
       toast.success(t('settings.saved'))
     } catch {
       setDebugModeEnabled(!enabled)
-      toast.error(t('settings.saveFailed'))
-    }
-  }
-
-  const handleCrossLanguageFallbackToggle = async (key, enabled) => {
-    try {
-      await updateSettings({ [key]: enabled ? 'true' : 'false' })
-      toast.success(t('settings.saved'))
-    } catch {
       toast.error(t('settings.saveFailed'))
     }
   }
@@ -521,12 +426,8 @@ export default function Settings() {
     }
   }
 
-  const currentLang = settings.language || 'de'
   const currentCurrency = settings.currency || 'USD'
   const currentPriceType = settings.price_primary || 'trend'
-  const currentTcgdexSyncLanguages = settings.tcgdex_sync_languages || 'en,de'
-  const crossLanguagePriceFallback = settings.cross_language_price_fallback !== 'false'
-  const crossLanguageImageFallback = settings.cross_language_image_fallback !== 'false'
 
   const usernameMutation = useMutation({
     mutationFn: (username) => changeUsername(username),
@@ -696,17 +597,6 @@ export default function Settings() {
           <section className="space-y-1">
             <SectionHeader title={t('settings.sectionAppearance')} />
             <SettingsCard>
-              <SettingsRow label={t('settings.language')} description={t('settings.languageDesc')}>
-                <SegmentedControl
-                  value={currentLang}
-                  options={[
-                    { value: 'de', label: '🇩🇪 DE' },
-                    { value: 'en', label: '🇬🇧 EN' },
-                    { value: 'zh', label: '🇨🇳 中文' },
-                  ]}
-                  onChange={handleLanguageChange}
-                />
-              </SettingsRow>
               <SettingsRow label={t('settings.currency')} description={t('settings.currencyDesc')}>
                 <SelectControl
                   value={currentCurrency}
@@ -829,34 +719,6 @@ export default function Settings() {
                   {isRunning ? t('settings.running') : t('settings.syncButton')}
                 </button>
               </SettingsRow>
-              {user?.role === 'admin' && (
-                <SettingsRow label={t('settings.tcgdexSyncLanguages')} description={t('settings.tcgdexSyncLanguagesDesc')}>
-                  <TcgdexLanguageControl
-                    value={currentTcgdexSyncLanguages}
-                    onChange={handleTcgdexSyncLanguagesChange}
-                    labels={{
-                      en: t('settings.languageEN'),
-                      de: t('settings.languageDE'),
-                    }}
-                  />
-                </SettingsRow>
-              )}
-              {user?.role === 'admin' && (
-                <>
-                  <SettingsRow label={t('settings.crossLanguagePriceFallback')} description={t('settings.crossLanguagePriceFallbackDesc')}>
-                    <Toggle
-                      value={crossLanguagePriceFallback}
-                      onChange={(val) => handleCrossLanguageFallbackToggle('cross_language_price_fallback', val)}
-                    />
-                  </SettingsRow>
-                  <SettingsRow label={t('settings.crossLanguageImageFallback')} description={t('settings.crossLanguageImageFallbackDesc')}>
-                    <Toggle
-                      value={crossLanguageImageFallback}
-                      onChange={(val) => handleCrossLanguageFallbackToggle('cross_language_image_fallback', val)}
-                    />
-                  </SettingsRow>
-                </>
-              )}
               {customMatches.length > 0 && (
                 <SettingsRow label={t('migration.title')} description={`${customMatches.length} ${t('migration.pendingMatches')}`}>
                   <button

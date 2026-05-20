@@ -224,6 +224,18 @@ input:-webkit-autofill:focus {
     border-color: rgba(227,0,11,0.4);
     box-shadow: 0 0 0 3px rgba(227,0,11,0.1);
   }
+  .select option,
+  .input option,
+  select option {
+    background-color: #0f0f1a;
+    color: #ffffff;
+  }
+  .select option:checked,
+  .input option:checked,
+  select option:checked {
+    background-color: #e3000b;
+    color: #ffffff;
+  }
   .select-sm {
     @apply select py-2 text-xs;
   }

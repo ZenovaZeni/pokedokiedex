@@ -54,9 +54,9 @@ const settings = {
   price_primary: 'trend',
   price_display: '["trend", "avg1", "avg7", "avg30", "low"]',
   multi_user_mode: 'false',
-  tcgdex_sync_languages: 'en,de',
-  cross_language_price_fallback: 'true',
-  cross_language_image_fallback: 'true',
+  tcgdex_sync_languages: 'en',
+  cross_language_price_fallback: 'false',
+  cross_language_image_fallback: 'false',
   debug_mode: 'false',
 }
 
