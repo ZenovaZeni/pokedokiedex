@@ -1,4 +1,4 @@
-import { pbkdf2Sync } from 'node:crypto'
+import { createHash, pbkdf2Sync } from 'node:crypto'
 import { ConvexHttpClient } from 'convex/browser'
 import { api as convexApi } from '../convex/_generated/api.js'
 
@@ -90,6 +90,12 @@ function passwordHash(username, password) {
   return pbkdf2Sync(password, `pokedokiedex-v2:${normalizedUsername}`, 120000, 32, 'sha256').toString('hex')
 }
 
+function legacyPasswordHash(username, password) {
+  return createHash('sha256')
+    .update(`${username.trim().toLowerCase()}:${password}:pokedokiedex-v1`)
+    .digest('hex')
+}
+
 async function convexResponse(req, res, path) {
   const convex = convexClient()
   if (!convex) return false
@@ -116,6 +122,7 @@ async function convexResponse(req, res, path) {
       const data = await convex.mutation(convexApi.accounts.loginOrCreate, {
         username,
         passwordHash: passwordHash(username, password),
+        legacyPasswordHash: legacyPasswordHash(username, password),
       })
       await convex.mutation(convexApi.cards.seedForUser, { token: data.access_token })
       send(res, 200, data)

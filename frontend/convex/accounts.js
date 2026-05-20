@@ -5,6 +5,7 @@ export const loginOrCreate = mutation({
   args: {
     username: v.string(),
     passwordHash: v.string(),
+    legacyPasswordHash: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const username = args.username.trim().toLowerCase()
@@ -17,8 +18,13 @@ export const loginOrCreate = mutation({
       .withIndex('by_username', (q) => q.eq('username', username))
       .unique()
 
-    if (user && user.passwordHash !== args.passwordHash) {
+    if (user && user.passwordHash !== args.passwordHash && user.passwordHash !== args.legacyPasswordHash) {
       throw new Error('Invalid username or password')
+    }
+
+    if (user && user.passwordHash === args.legacyPasswordHash) {
+      await ctx.db.patch(user._id, { passwordHash: args.passwordHash })
+      user = { ...user, passwordHash: args.passwordHash }
     }
 
     if (!user) {
