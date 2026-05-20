@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
-  LayoutDashboard, Search, Library, Grid2X2, MoreHorizontal,
-  Heart, BookOpen, BarChart3, ShoppingBag, Settings, X, Zap, LogOut
+  Search, Library, Grid2X2, MoreHorizontal,
+  Heart, BookOpen, BarChart3, ShoppingBag, Settings, X, Zap, LogOut, Trophy, Award
 } from 'lucide-react'
 import { getCustomMatches } from '../api/client'
 import { useAuth } from '../contexts/AuthContext'
@@ -15,6 +15,7 @@ export default function BottomNav() {
   const { logout } = useAuth()
   const [showMore, setShowMore] = useState(false)
   const navigate = useNavigate()
+  const location = useLocation()
 
   const { data: matches = [] } = useQuery({
     queryKey: ['custom-matches'],
@@ -23,18 +24,22 @@ export default function BottomNav() {
   })
   const pendingCount = matches.length
 
-  const mainNav = [
-    { to: '/dashboard',  icon: LayoutDashboard, label: t('nav.dashboard') },
-    { to: '/search',     icon: Search,           label: t('nav.cardSearch') },
-    { to: '/collection', icon: Library,          label: t('nav.collection') },
-    { to: '/sets',       icon: Grid2X2,          label: t('nav.sets') },
+  const leftNav = [
+    { to: '/search', icon: Search, label: t('nav.cardSearch') },
+    { to: '/collection', icon: Library, label: t('nav.collection') },
+  ]
+
+  const rightNav = [
+    { to: '/sets', icon: Grid2X2, label: t('nav.sets') },
   ]
 
   const moreNav = [
-    { to: '/wishlist',   icon: Heart,      label: t('nav.wishlist') },
     { to: '/binders',    icon: BookOpen,   label: t('nav.binders') },
+    { to: '/wishlist',   icon: Heart,      label: t('nav.wishlist') },
     { to: '/analytics',  icon: BarChart3,  label: t('nav.analytics') },
     { to: '/products',   icon: ShoppingBag, label: t('nav.products') },
+    { to: '/leaderboard', icon: Trophy, label: t('nav.leaderboard') },
+    { to: '/achievements', icon: Award, label: t('nav.achievements') },
     { to: '/settings',   icon: Settings,   label: t('nav.settings') },
     ...(pendingCount > 0
       ? [{ to: '/migration', icon: Zap, label: t('migration.title'), badge: pendingCount }]
@@ -52,11 +57,38 @@ export default function BottomNav() {
     navigate('/login')
   }
 
+  const dashboardActive = location.pathname === '/' || location.pathname.startsWith('/dashboard')
+
   return (
     <>
       {/* ── Bottom Nav Bar ── */}
       <nav className="bottom-nav">
-        {mainNav.map(({ to, icon: Icon, label }) => (
+        {leftNav.map(({ to, icon: Icon, label }) => (
+          <NavLink
+            key={to}
+            to={to}
+            className={({ isActive }) =>
+              clsx('bottom-nav-item', isActive ? 'bottom-nav-active' : 'bottom-nav-inactive')
+            }
+          >
+            <Icon size={22} />
+            <span>{label}</span>
+          </NavLink>
+        ))}
+
+        <button
+          onClick={() => navigate('/dashboard')}
+          className={clsx('bottom-nav-fob', dashboardActive && 'bottom-nav-fob-active')}
+          aria-label={t('nav.dashboard')}
+        >
+          <span className="pokeball-fob" aria-hidden="true">
+            <span className="pokeball-fob-center" />
+            <span className="pokeball-fob-line" />
+          </span>
+          <span className="bottom-nav-fob-label">{t('nav.dashboard')}</span>
+        </button>
+
+        {rightNav.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}
             to={to}

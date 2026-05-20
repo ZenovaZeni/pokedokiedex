@@ -29,7 +29,7 @@
   --safe-area-top:    env(safe-area-inset-top, 0px);
 
   /* Bottom nav height (used for main content padding) */
-  --bottom-nav-height: 4rem; /* 64px */
+  --bottom-nav-height: 4.75rem; /* 76px */
 }
 
 /* Safari autofill override */
@@ -292,11 +292,58 @@ input:-webkit-autofill:focus {
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border-top: 1px solid rgba(255,255,255,0.06);
+    min-height: var(--bottom-nav-height);
   }
   .bottom-nav-item {
     @apply flex flex-col items-center justify-center gap-0.5
            flex-1 py-2 text-[10px] font-medium
            transition-colors duration-150 select-none cursor-pointer;
+  }
+  .bottom-nav-fob {
+    @apply relative flex flex-1 flex-col items-center justify-center gap-0.5
+           py-2 text-[10px] font-semibold text-text-muted
+           transition-colors duration-150 select-none;
+  }
+  .bottom-nav-fob-label {
+    @apply mt-1 leading-none;
+  }
+  .bottom-nav-fob-active .bottom-nav-fob-label {
+    color: var(--color-brand-red);
+  }
+  .pokeball-fob {
+    position: relative;
+    width: 3.35rem;
+    height: 3.35rem;
+    margin-top: -1.75rem;
+    border-radius: 999px;
+    border: 2px solid #08080f;
+    background: linear-gradient(180deg, #e3000b 0 48%, #08080f 48% 54%, #f4f4f5 54% 100%);
+    box-shadow:
+      0 8px 28px rgba(0,0,0,0.55),
+      0 0 0 4px rgba(15,15,26,0.9),
+      0 0 24px rgba(227,0,11,0.28);
+  }
+  .pokeball-fob-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 3px;
+    transform: translateY(-50%);
+    background: #08080f;
+  }
+  .pokeball-fob-center {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: 1;
+    width: 1.2rem;
+    height: 1.2rem;
+    transform: translate(-50%, -50%);
+    border-radius: 999px;
+    border: 3px solid #08080f;
+    background: #f8fafc;
+    box-shadow: inset 0 0 0 3px #d1d5db;
   }
   .bottom-nav-active {
     @apply text-brand-red;

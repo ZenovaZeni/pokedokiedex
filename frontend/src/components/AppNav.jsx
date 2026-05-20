@@ -5,17 +5,17 @@ import { useSettings } from '../contexts/SettingsContext'
 
 const PAGE_TITLE_KEYS = {
   '/collection': 'nav.collection',
-  '/search':     'nav.cardSearch',
-  '/sets':       'nav.sets',
-  '/analytics':  'nav.analytics',
-  '/binders':    'nav.binders',
-  '/wishlist':   'nav.wishlist',
-  '/products':   'nav.products',
+  '/search': 'nav.cardSearch',
+  '/sets': 'nav.sets',
+  '/analytics': 'nav.analytics',
+  '/binders': 'nav.binders',
+  '/wishlist': 'nav.wishlist',
+  '/products': 'nav.products',
   '/leaderboard': 'nav.leaderboard',
   '/achievements': 'nav.achievements',
-  '/settings':   'nav.settings',
-  '/migration':  'migration.title',
-  '/dashboard':  'nav.dashboard',
+  '/settings': 'nav.settings',
+  '/migration': 'migration.title',
+  '/dashboard': 'nav.dashboard',
 }
 
 export default function AppNav() {
@@ -24,7 +24,10 @@ export default function AppNav() {
   const { user, logout, multiUser } = useAuth()
   const { t } = useSettings()
 
-  const handleLogout = () => { logout(); navigate('/login') }
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+  }
 
   if (location.pathname === '/') return null
 
@@ -35,18 +38,19 @@ export default function AppNav() {
 
   return (
     <>
-      {/* Page title — subtle top strip with logout */}
       {title && (
-        <div className="sticky top-0 z-40 px-4 pt-5 pb-3 flex items-center justify-between"
-          style={{ background: 'linear-gradient(to bottom, rgba(6,8,15,0.98) 70%, transparent)' }}>
+        <div
+          className="sticky top-0 z-40 flex items-center justify-between px-4 pb-3 pt-5"
+          style={{ background: 'linear-gradient(to bottom, rgba(6,8,15,0.98) 70%, transparent)' }}
+        >
           <div className="w-8" />
-          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-text-muted text-center truncate flex-1 min-w-0">
+          <p className="min-w-0 flex-1 truncate text-center text-[11px] font-black uppercase tracking-[0.2em] text-text-muted">
             {title}
           </p>
           {multiUser ? (
             <button
               onClick={handleLogout}
-              className="flex h-8 min-w-8 items-center justify-center gap-1.5 rounded-lg px-1.5 text-text-muted transition-colors hover:text-brand-red pointer-events-auto"
+              className="pointer-events-auto flex h-8 min-w-8 items-center justify-center gap-1.5 rounded-lg px-1.5 text-text-muted transition-colors hover:text-brand-red"
               aria-label={t('auth.logout')}
             >
               {user?.avatar_id ? (
@@ -63,28 +67,6 @@ export default function AppNav() {
           )}
         </div>
       )}
-
-      {/* Floating Pokeball home button — bottom left */}
-      <button
-        onClick={() => navigate('/')}
-        aria-label={t('home.navigation')}
-        className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom,0px)+0.75rem)] left-4 z-50 w-12 h-12 rounded-full flex items-center justify-center
-          lg:bottom-6
-          transition-all duration-200 active:scale-90 hover:scale-110"
-        style={{
-          background: 'linear-gradient(180deg, #e3000b 50%, #f5f5f5 50%)',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.5), 0 0 0 2px rgba(0,0,0,0.8), 0 0 16px rgba(227,0,11,0.3)',
-          border: '2px solid #111',
-        }}
-      >
-        {/* Pokeball center button */}
-        <div className="w-4 h-4 rounded-full bg-white border-2 border-black flex items-center justify-center"
-          style={{ boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.3)' }}>
-          <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />
-        </div>
-        {/* Horizontal divider line */}
-        <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[2px] bg-black pointer-events-none" />
-      </button>
     </>
   )
 }
