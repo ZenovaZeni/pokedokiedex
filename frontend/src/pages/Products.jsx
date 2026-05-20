@@ -223,17 +223,17 @@ export default function Products() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="stat-card">
             <p className="stat-label uppercase tracking-wide">{t('products.totalInvested')}</p>
-            <p className="stat-value">€{periodStats.totalInvested.toFixed(2)}</p>
+            <p className="stat-value">${periodStats.totalInvested.toFixed(2)}</p>
             <p className="text-xs text-text-muted">{periodStats.count} {t('products.items')}</p>
           </div>
           <div className="stat-card">
             <p className="stat-label uppercase tracking-wide">{t('products.currentValue')}</p>
-            <p className="stat-value">€{periodStats.totalValue.toFixed(2)}</p>
+            <p className="stat-value">${periodStats.totalValue.toFixed(2)}</p>
           </div>
           <div className="stat-card">
             <p className="stat-label uppercase tracking-wide">{t('products.totalPnl')}</p>
             <p className={clsx('text-xl font-bold', periodStats.totalPnl >= 0 ? 'text-green' : 'text-brand-red')}>
-              {periodStats.totalPnl >= 0 ? '+' : ''}€{periodStats.totalPnl.toFixed(2)}
+              {periodStats.totalPnl >= 0 ? '+' : ''}${periodStats.totalPnl.toFixed(2)}
             </p>
           </div>
           <div className="stat-card">
@@ -254,9 +254,9 @@ export default function Products() {
             <BarChart data={monthlyChartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#2a2a3d" />
               <XAxis dataKey="month" tick={{ fill: '#606078', fontSize: 11 }} />
-              <YAxis tick={{ fill: '#606078', fontSize: 11 }} tickFormatter={v => `€${v}`} />
+              <YAxis tick={{ fill: '#606078', fontSize: 11 }} tickFormatter={v => `$${v}`} />
               <Tooltip contentStyle={{ background: '#1e1e2e', border: '1px solid #2a2a3d', borderRadius: '8px', color: '#fff' }}
-                formatter={(val, name) => [`€${val.toFixed(2)}`, name]} />
+                formatter={(val, name) => [`$${val.toFixed(2)}`, name]} />
               <Bar dataKey="invested" name={t('products.invested')} fill="#606078" radius={[4, 4, 0, 0]} />
               <Bar dataKey="current" name={t('products.currentValue')} fill="#EF1515" radius={[4, 4, 0, 0]} />
             </BarChart>
@@ -395,14 +395,14 @@ export default function Products() {
                         </td>
                         <td className="px-4 py-3 text-text-secondary text-xs">{p.product_type || '-'}</td>
                         <td className="px-4 py-3 text-text-secondary text-xs">{p.purchase_date}</td>
-                        <td className="px-4 py-3 text-right font-medium text-text-primary">€{p.purchase_price?.toFixed(2)}</td>
+                        <td className="px-4 py-3 text-right font-medium text-text-primary">${p.purchase_price?.toFixed(2)}</td>
                         <td className="px-4 py-3 text-right text-text-primary">
-                          {p.sold_price ? `€${p.sold_price.toFixed(2)}` : p.current_value ? `€${p.current_value.toFixed(2)}` : '-'}
+                          {p.sold_price ? `$${p.sold_price.toFixed(2)}` : p.current_value ? `$${p.current_value.toFixed(2)}` : '-'}
                         </td>
                         <td className="px-4 py-3 text-right font-medium">
                           {p.pnl !== null ? (
                             <span className={p.pnl >= 0 ? 'text-green' : 'text-brand-red'}>
-                              {p.pnl >= 0 ? '+' : ''}€{p.pnl?.toFixed(2)}
+                              {p.pnl >= 0 ? '+' : ''}${p.pnl?.toFixed(2)}
                             </span>
                           ) : '-'}
                         </td>
@@ -454,9 +454,9 @@ export default function Products() {
                 <CardListItem
                   key={p.id}
                   name={p.product_name}
-                  subtext={`${p.purchase_date} · €${p.purchase_price?.toFixed(2)}`}
+                  subtext={`${p.purchase_date} · $${p.purchase_price?.toFixed(2)}`}
                   badges={badges}
-                  value={p.pnl !== null ? `${p.pnl >= 0 ? '+' : ''}€${p.pnl?.toFixed(2)}` : '-'}
+                  value={p.pnl !== null ? `${p.pnl >= 0 ? '+' : ''}$${p.pnl?.toFixed(2)}` : '-'}
                   valueSecondary={p.pnl_percent !== null ? `${p.pnl_percent >= 0 ? '+' : ''}${p.pnl_percent?.toFixed(1)}%` : undefined}
                   rightAction={
                     <div className="flex flex-col gap-1">
@@ -488,9 +488,9 @@ export default function Products() {
               <div key={type.type} className="bg-bg-card border border-border rounded-lg p-3">
                 <p className="text-xs text-text-muted mb-1">{type.type}</p>
                 <p className="text-sm font-medium text-text-primary">{type.count} {t('products.items')}</p>
-                <p className="text-xs text-text-secondary">{t('products.invested')}: €{type.invested.toFixed(2)}</p>
+                <p className="text-xs text-text-secondary">{t('products.invested')}: ${type.invested.toFixed(2)}</p>
                 <p className={clsx('text-sm font-bold mt-1', type.pnl >= 0 ? 'text-green' : 'text-brand-red')}>
-                  {type.pnl >= 0 ? '+' : ''}€{type.pnl.toFixed(2)} ({type.pnl_pct >= 0 ? '+' : ''}{type.pnl_pct.toFixed(1)}%)
+                  {type.pnl >= 0 ? '+' : ''}${type.pnl.toFixed(2)} ({type.pnl_pct >= 0 ? '+' : ''}{type.pnl_pct.toFixed(1)}%)
                 </p>
               </div>
             ))}

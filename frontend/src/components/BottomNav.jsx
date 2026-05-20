@@ -83,7 +83,10 @@ export default function BottomNav() {
           className={clsx('bottom-nav-fob', dashboardActive && 'bottom-nav-fob-active')}
           aria-label={t('nav.dashboard')}
         >
-          <img src="/dokiedex-mark.svg" alt="" className="dokiedex-fob" aria-hidden="true" />
+          <span className="pokeball-fob" aria-hidden="true">
+            <span className="pokeball-fob-line" />
+            <span className="pokeball-fob-center" />
+          </span>
           <span className="bottom-nav-fob-label">{t('nav.dashboard')}</span>
         </button>
 

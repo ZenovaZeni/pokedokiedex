@@ -31,12 +31,12 @@ function AlertEditor({ item, onDone }) {
     <div className="flex items-center gap-2">
       <div className="flex items-center gap-1">
         <span className="text-xs text-text-muted">↑</span>
-        <input type="number" step="0.01" placeholder="Above €" value={above}
+        <input type="number" step="0.01" placeholder="Above $" value={above}
           onChange={(e) => setAbove(e.target.value)} className="input w-20 py-1 text-xs" />
       </div>
       <div className="flex items-center gap-1">
         <span className="text-xs text-text-muted">↓</span>
-        <input type="number" step="0.01" placeholder="Below €" value={below}
+        <input type="number" step="0.01" placeholder="Below $" value={below}
           onChange={(e) => setBelow(e.target.value)} className="input w-20 py-1 text-xs" />
       </div>
       <button onClick={() => updateMutation.mutate()} className="text-green hover:text-green/80">

@@ -310,19 +310,40 @@ input:-webkit-autofill:focus {
   .bottom-nav-fob-active .bottom-nav-fob-label {
     color: var(--color-brand-red);
   }
-  .dokiedex-fob {
+  .pokeball-fob {
     position: relative;
     width: 3.35rem;
     height: 3.35rem;
     margin-top: -1.75rem;
-    border-radius: 1rem;
+    border-radius: 999px;
     border: 2px solid #08080f;
-    background: #12121d;
-    object-fit: cover;
+    background: linear-gradient(180deg, #e3000b 0 48%, #08080f 48% 54%, #f4f4f5 54% 100%);
     box-shadow:
       0 8px 28px rgba(0,0,0,0.55),
       0 0 0 4px rgba(15,15,26,0.9),
       0 0 24px rgba(227,0,11,0.28);
+  }
+  .pokeball-fob-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 3px;
+    transform: translateY(-50%);
+    background: #08080f;
+  }
+  .pokeball-fob-center {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: 1;
+    width: 1.2rem;
+    height: 1.2rem;
+    transform: translate(-50%, -50%);
+    border-radius: 999px;
+    border: 3px solid #08080f;
+    background: #f8fafc;
+    box-shadow: inset 0 0 0 3px #d1d5db;
   }
   .bottom-nav-active {
     @apply text-brand-red;

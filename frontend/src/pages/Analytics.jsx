@@ -34,8 +34,8 @@ function CustomTooltip({ active, payload, label }) {
         {payload.map((entry, i) => (
           <p key={i} style={{ color: entry.color }} className="font-medium">
             {entry.name}: {typeof entry.value === 'number'
-              ? (entry.name.includes('€') || ['Value', 'Cost', 'P&L', 'Wert', 'Kosten', 'G&V'].includes(entry.name)
-                ? `€${entry.value.toFixed(2)}`
+              ? (entry.name.includes('$') || ['Value', 'Cost', 'P&L', 'Wert', 'Kosten', 'G&V'].includes(entry.name)
+                ? `$${entry.value.toFixed(2)}`
                 : entry.value)
               : entry.value}
           </p>
@@ -290,8 +290,8 @@ export default function Analytics() {
                         <td className="px-4 py-3 text-text-secondary text-xs">{item.set_name || '-'}</td>
                         <td className="px-4 py-3 text-text-secondary text-xs">{item.rarity || '-'}</td>
                         <td className="px-4 py-3 text-center font-bold text-brand-red">{item.quantity}x</td>
-                        <td className="px-4 py-3 text-right text-text-primary">€{item.price_market?.toFixed(2)}</td>
-                        <td className="px-4 py-3 text-right font-bold text-green">€{item.total_value?.toFixed(2)}</td>
+                        <td className="px-4 py-3 text-right text-text-primary">${item.price_market?.toFixed(2)}</td>
+                        <td className="px-4 py-3 text-right font-bold text-green">${item.total_value?.toFixed(2)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -308,8 +308,8 @@ export default function Analytics() {
                       { label: `${item.quantity}x`, variant: 'red' },
                       ...(item.rarity ? [{ label: item.rarity, variant: 'gray' }] : []),
                     ]}
-                    value={`€${item.total_value?.toFixed(2)}`}
-                    valueSecondary={`€${item.price_market?.toFixed(2)}`}
+                    value={`$${item.total_value?.toFixed(2)}`}
+                    valueSecondary={`$${item.price_market?.toFixed(2)}`}
                   />
                 ))}
               </div>
@@ -341,7 +341,7 @@ export default function Analytics() {
                     <p className="text-xs text-text-muted">{card.rarity}</p>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <p className="text-sm text-text-secondary">€{card.old_price?.toFixed(2)} → €{card.current_price?.toFixed(2)}</p>
+                    <p className="text-sm text-text-secondary">${card.old_price?.toFixed(2)} to ${card.current_price?.toFixed(2)}</p>
                     <div className={clsx(
                       'flex items-center justify-end gap-1 font-bold',
                       card.change_pct >= 0 ? 'text-green' : 'text-brand-red'
@@ -349,7 +349,7 @@ export default function Analytics() {
                       {card.change_pct >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
                       {card.change_pct >= 0 ? '+' : ''}{card.change_pct}%
                       <span className="text-xs font-normal ml-1">
-                        ({card.change_abs >= 0 ? '+' : ''}€{card.change_abs?.toFixed(2)})
+                        ({card.change_abs >= 0 ? '+' : ''}${card.change_abs?.toFixed(2)})
                       </span>
                     </div>
                   </div>
@@ -392,7 +392,7 @@ export default function Analytics() {
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={rarityStats} layout="vertical">
                     <CartesianGrid strokeDasharray="3 3" stroke="#2a2a3d" horizontal={false} />
-                    <XAxis type="number" tick={{ fill: '#606078', fontSize: 11 }} tickFormatter={v => `€${v}`} />
+                    <XAxis type="number" tick={{ fill: '#606078', fontSize: 11 }} tickFormatter={v => `$${v}`} />
                     <YAxis dataKey="rarity" type="category" tick={{ fill: '#606078', fontSize: 10 }} width={100} />
                     <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
                     <Bar dataKey="total_value" name={t('analytics.value')} radius={[0, 4, 4, 0]}>
@@ -422,7 +422,7 @@ export default function Analytics() {
                           </td>
                           <td className="py-2 text-right text-text-secondary">{r.count}</td>
                           <td className="py-2 text-right text-text-secondary">{r.percentage}%</td>
-                          <td className="py-2 text-right text-green font-medium">€{r.total_value?.toFixed(2)}</td>
+                          <td className="py-2 text-right text-green font-medium">${r.total_value?.toFixed(2)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -436,7 +436,7 @@ export default function Analytics() {
                         <p className="text-sm font-medium text-text-primary truncate">{r.rarity}</p>
                         <p className="text-xs text-text-secondary">{r.count} · {r.percentage}%</p>
                       </div>
-                      <p className="text-green font-medium text-sm flex-shrink-0">€{r.total_value?.toFixed(2)}</p>
+                      <p className="text-green font-medium text-sm flex-shrink-0">${r.total_value?.toFixed(2)}</p>
                     </div>
                   ))}
                 </div>
@@ -516,7 +516,7 @@ export default function Analytics() {
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#2a2a3d" />
                     <XAxis dataKey="date" tick={{ fill: '#606078', fontSize: 11 }} />
-                    <YAxis tick={{ fill: '#606078', fontSize: 11 }} tickFormatter={v => `€${v}`} />
+                    <YAxis tick={{ fill: '#606078', fontSize: 11 }} tickFormatter={v => `$${v}`} />
                     <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
                     <Area type="monotone" dataKey="cost" name={t('analytics.cost')} stroke="#606078" fill="url(#costGrad)" strokeWidth={1.5} strokeDasharray="4 4" />
                     <Area type="monotone" dataKey="value" name={t('analytics.value')} stroke="#EF1515" fill="url(#valueGrad)" strokeWidth={2} />
@@ -529,7 +529,7 @@ export default function Analytics() {
                   <BarChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#2a2a3d" />
                     <XAxis dataKey="date" tick={{ fill: '#606078', fontSize: 11 }} />
-                    <YAxis tick={{ fill: '#606078', fontSize: 11 }} tickFormatter={v => `€${v}`} />
+                    <YAxis tick={{ fill: '#606078', fontSize: 11 }} tickFormatter={v => `$${v}`} />
                     <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
                     <Bar dataKey="pnl" name={t('analytics.pnl')} radius={[4, 4, 0, 0]}>
                       {chartData.map((entry, i) => (

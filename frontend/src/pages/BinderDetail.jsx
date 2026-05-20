@@ -250,7 +250,7 @@ export default function BinderDetail() {
                 )}
                 <div className="p-1.5">
                   <p className="text-xs text-text-primary font-medium truncate">{card.name}</p>
-                  {card.price_market && <p className="text-xs text-green">€{card.price_market.toFixed(2)}</p>}
+                  {card.price_market && <p className="text-xs text-green">${card.price_market.toFixed(2)}</p>}
                 </div>
 
                 <button onClick={() => removeMutation.mutate(card.id)}
