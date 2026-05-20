@@ -129,7 +129,7 @@ export default function Dashboard() {
               onClick={() => navigate('/collection')}
               className="text-xs text-brand-red font-semibold hover:text-brand-red/80 transition-opacity"
             >
-              Alle →
+              View all
             </button>
           </div>
           <div className="flex gap-2.5 overflow-x-auto pb-2 no-scrollbar -mx-4 px-4">

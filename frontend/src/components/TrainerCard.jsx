@@ -52,11 +52,11 @@ export default function TrainerCard({
 
             <div className="space-y-1">
               <div className="flex justify-between text-xs">
-                <span className="text-text-secondary">Karten</span>
+                <span className="text-text-secondary">Cards</span>
                 <span className="text-white font-bold">{Number(totalCards).toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-xs">
-                <span className="text-text-secondary">Wert</span>
+                <span className="text-text-secondary">Value</span>
                 <span className="text-gold font-bold">{formatPrice(Number(totalValue))}</span>
               </div>
               <div className="flex justify-between text-xs">
@@ -70,7 +70,7 @@ export default function TrainerCard({
         {/* Collection HP bar */}
         <div className="mt-4">
           <div className="flex justify-between text-[10px] text-text-muted mb-1.5">
-            <span className="uppercase tracking-wider">Fortschritt</span>
+            <span className="uppercase tracking-wider">Progress</span>
             <span className="font-bold">{completionPct}%</span>
           </div>
           <div className="hp-bar-track">
@@ -83,9 +83,9 @@ export default function TrainerCard({
           <div className="flex gap-4 mt-3 pt-3 border-t border-white/5">
             {weeklyGain !== 0 && (
               <div>
-                <p className="text-[10px] text-text-muted uppercase tracking-wider">Diese Woche</p>
+                <p className="text-[10px] text-text-muted uppercase tracking-wider">This Week</p>
                 <p className={`text-sm font-bold ${weeklyGain > 0 ? 'text-green' : 'text-brand-red'}`}>
-                  {weeklyGain > 0 ? '+' : ''}{weeklyGain} Karten
+                  {weeklyGain > 0 ? '+' : ''}{weeklyGain} Cards
                 </p>
               </div>
             )}

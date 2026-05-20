@@ -126,7 +126,7 @@ export function SettingsProvider({ children }) {
   }, [settings.price_primary])
 
   const currency = 'USD'
-  const currencySymbol = currency === 'USD' ? '$' : '€'
+  const currencySymbol = '$'
 
   const formatPrice = useCallback((eurAmount) => {
     if (eurAmount == null || isNaN(Number(eurAmount))) return '-'
