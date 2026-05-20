@@ -65,6 +65,93 @@ let ebayTokenCache = {
   expiresAt: 0,
 }
 
+const memoryCache = new Map()
+const providerWindows = new Map()
+
+const PROVIDER_LIMITS = {
+  tcgdex: { limit: 120, windowMs: 60 * 1000, timeoutMs: 10000 },
+  pokemonTcgPublic: { limit: 80, windowMs: 60 * 60 * 1000, timeoutMs: 9000 },
+  pokemonTcgKey: { limit: 900, windowMs: 60 * 60 * 1000, timeoutMs: 9000 },
+  carddexPublic: { limit: 25, windowMs: 60 * 1000, timeoutMs: 4000 },
+  carddexKey: { limit: 90, windowMs: 60 * 1000, timeoutMs: 4000 },
+  opentcg: { limit: 600, windowMs: 60 * 1000, timeoutMs: 3000 },
+  ebayAuth: { limit: 50, windowMs: 60 * 60 * 1000, timeoutMs: 9000 },
+  ebayBrowse: { limit: 4500, windowMs: 24 * 60 * 60 * 1000, timeoutMs: 9000 },
+}
+
+function cacheKey(provider, url, options = {}) {
+  const headerKeys = ['x-api-key', 'x-ebay-c-marketplace-id']
+  const headers = options.headers || {}
+  const safeHeaders = headerKeys
+    .map((key) => `${key}:${headers[key] || headers[key.toUpperCase()] || ''}`)
+    .join('|')
+  return `${provider}:${url}:${safeHeaders}`
+}
+
+function getCached(key) {
+  const hit = memoryCache.get(key)
+  if (!hit) return null
+  if (hit.expiresAt <= Date.now()) {
+    memoryCache.delete(key)
+    return null
+  }
+  return hit.value
+}
+
+function setCached(key, value, ttlMs) {
+  if (!ttlMs) return
+  memoryCache.set(key, { value, expiresAt: Date.now() + ttlMs })
+  if (memoryCache.size > 1000) {
+    const firstKey = memoryCache.keys().next().value
+    if (firstKey) memoryCache.delete(firstKey)
+  }
+}
+
+function checkProviderLimit(provider) {
+  const limitConfig = PROVIDER_LIMITS[provider]
+  if (!limitConfig) return
+  const now = Date.now()
+  const windowState = providerWindows.get(provider) || { startedAt: now, count: 0 }
+  if (now - windowState.startedAt >= limitConfig.windowMs) {
+    providerWindows.set(provider, { startedAt: now, count: 1 })
+    return
+  }
+  if (windowState.count >= limitConfig.limit) {
+    const error = new Error(`${provider} free-tier limit reached. Try again after the provider window resets.`)
+    error.status = 429
+    error.code = 'PROVIDER_RATE_LIMITED'
+    throw error
+  }
+  windowState.count += 1
+  providerWindows.set(provider, windowState)
+}
+
+async function providerJson(provider, url, options = {}, config = {}) {
+  const limitConfig = PROVIDER_LIMITS[provider] || {}
+  const key = cacheKey(provider, url, options)
+  const cached = getCached(key)
+  if (cached) return { data: cached, cache: 'hit' }
+
+  checkProviderLimit(provider)
+
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), config.timeoutMs || limitConfig.timeoutMs || 8000)
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) {
+      const error = new Error(data.error?.message || data.errors?.[0]?.message || data.message || `${provider} request failed`)
+      error.status = response.status
+      error.code = `${provider.toUpperCase()}_REQUEST_FAILED`
+      throw error
+    }
+    setCached(key, data, config.ttlMs)
+    return { data, cache: 'miss' }
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
 function send(res, status, data) {
   res.setHeader('Cache-Control', 'no-store')
   res.setHeader('X-Content-Type-Options', 'nosniff')
@@ -103,6 +190,7 @@ async function getEbayAccessToken(config) {
     scope: 'https://api.ebay.com/oauth/api_scope',
   })
 
+  checkProviderLimit('ebayAuth')
   const response = await fetch(`${config.apiBase}/identity/v1/oauth2/token`, {
     method: 'POST',
     headers: {
@@ -158,6 +246,56 @@ function summarizeEbayItems(items = []) {
 }
 
 async function ebayResponse(req, res, path, url) {
+  if (path === 'providers/status') {
+    const pokemonProvider = pokemonTcgProviderName()
+    const ebay = ebayConfig()
+    send(res, 200, {
+      free_fallbacks_enabled: process.env.ENABLE_FREE_PROVIDER_FALLBACKS !== 'false',
+      providers: [
+        {
+          id: 'tcgdex',
+          name: 'TCGdex',
+          configured: true,
+          role: 'primary catalog and pricing',
+          rate_limit: PROVIDER_LIMITS.tcgdex,
+        },
+        {
+          id: 'pokemon-tcg-api',
+          name: 'Pokemon TCG API',
+          configured: true,
+          role: 'free metadata/image/price fallback',
+          api_key_configured: Boolean(process.env.POKEMON_TCG_API_KEY),
+          rate_limit: PROVIDER_LIMITS[pokemonProvider],
+        },
+        {
+          id: 'ebay',
+          name: 'eBay Browse API',
+          configured: ebay.configured,
+          role: 'active listing comps',
+          required_env: ebay.configured ? [] : ['EBAY_CLIENT_ID', 'EBAY_CLIENT_SECRET'],
+          rate_limit: PROVIDER_LIMITS.ebayBrowse,
+        },
+        {
+          id: 'carddex',
+          name: 'CardDex',
+          configured: Boolean(process.env.CARDDEX_API_KEY),
+          role: 'optional beta fallback, key-supported',
+          required_env: ['CARDDEX_API_KEY'],
+          rate_limit: process.env.CARDDEX_API_KEY ? PROVIDER_LIMITS.carddexKey : PROVIDER_LIMITS.carddexPublic,
+        },
+        {
+          id: 'opentcg',
+          name: 'OpenTCG',
+          configured: process.env.ENABLE_OPENTCG_FALLBACK === 'true',
+          role: 'optional experimental catalog fallback',
+          optional_env: ['ENABLE_OPENTCG_FALLBACK=true'],
+          rate_limit: PROVIDER_LIMITS.opentcg,
+        },
+      ],
+    })
+    return true
+  }
+
   if (path === 'ebay/status') {
     const config = ebayConfig()
     send(res, 200, {
@@ -200,21 +338,12 @@ async function ebayResponse(req, res, path, url) {
     searchUrl.searchParams.set('limit', String(limit))
     searchUrl.searchParams.set('sort', 'price')
 
-    const response = await fetch(searchUrl, {
+    const { data } = await providerJson('ebayBrowse', searchUrl.toString(), {
       headers: {
         Authorization: `Bearer ${token}`,
         'X-EBAY-C-MARKETPLACE-ID': config.marketplaceId,
       },
-    })
-    const data = await response.json().catch(() => ({}))
-
-    if (!response.ok) {
-      send(res, response.status, {
-        detail: data.errors?.[0]?.message || data.message || 'eBay search failed',
-        code: 'EBAY_SEARCH_FAILED',
-      })
-      return true
-    }
+    }, { ttlMs: 10 * 60 * 1000 })
 
     const items = (data.itemSummaries || []).map((item) => ({
       id: item.itemId,
@@ -296,6 +425,19 @@ function priceFromPricing(card, key) {
   return Number.isFinite(number) ? number : null
 }
 
+function numberOrNull(value) {
+  const number = Number(value)
+  return Number.isFinite(number) ? number : null
+}
+
+function firstNumber(...values) {
+  for (const value of values) {
+    const number = numberOrNull(value)
+    if (number !== null) return number
+  }
+  return null
+}
+
 function normalizeTcgdexCard(card) {
   const image = card.image || ''
   const set = card.set || {}
@@ -321,6 +463,14 @@ function normalizeTcgdexCard(card) {
     price_avg1: priceFromPricing(card, 'avg1'),
     price_avg7: priceFromPricing(card, 'avg7'),
     price_avg30: priceFromPricing(card, 'avg30'),
+    attacks: card.attacks || [],
+    weaknesses: card.weaknesses || [],
+    retreatCost: card.retreat || card.retreatCost || [],
+    rules: card.rules || [],
+    legalities: card.legal || card.legalities || null,
+    data_sources: ['TCGdex'],
+    price_sources: card.pricing ? ['TCGdex marketplace mapping'] : [],
+    price_confidence: card.pricing ? 'medium' : 'missing',
     set_ref: {
       id: set.id ? `${set.id}_en` : '',
       tcg_set_id: set.id || '',
@@ -333,11 +483,169 @@ function normalizeTcgdexCard(card) {
   }
 }
 
+function pokemonTcgHeaders() {
+  const apiKey = process.env.POKEMON_TCG_API_KEY || ''
+  return apiKey ? { 'X-Api-Key': apiKey } : {}
+}
+
+function pokemonTcgProviderName() {
+  return process.env.POKEMON_TCG_API_KEY ? 'pokemonTcgKey' : 'pokemonTcgPublic'
+}
+
+function pokemonTcgPrice(card, variant, key) {
+  return numberOrNull(card?.tcgplayer?.prices?.[variant]?.[key])
+}
+
+function normalizePokemonTcgCard(card) {
+  const prices = card.tcgplayer?.prices || {}
+  const market = firstNumber(
+    pokemonTcgPrice(card, 'normal', 'market'),
+    pokemonTcgPrice(card, 'holofoil', 'market'),
+    pokemonTcgPrice(card, 'reverseHolofoil', 'market'),
+    card.cardmarket?.prices?.averageSellPrice,
+    card.cardmarket?.prices?.trendPrice
+  )
+  const low = firstNumber(
+    pokemonTcgPrice(card, 'normal', 'low'),
+    pokemonTcgPrice(card, 'holofoil', 'low'),
+    pokemonTcgPrice(card, 'reverseHolofoil', 'low'),
+    card.cardmarket?.prices?.lowPrice
+  )
+  const high = firstNumber(
+    pokemonTcgPrice(card, 'normal', 'high'),
+    pokemonTcgPrice(card, 'holofoil', 'high'),
+    pokemonTcgPrice(card, 'reverseHolofoil', 'high')
+  )
+  const set = card.set || {}
+
+  return {
+    id: `${card.id}_en`,
+    tcg_card_id: card.id,
+    name: card.name,
+    set_id: set.id || '',
+    number: card.number || '',
+    rarity: card.rarity || '',
+    types: card.types || [],
+    supertype: card.supertype || '',
+    hp: card.hp ? String(card.hp) : '',
+    artist: card.artist || '',
+    images_small: card.images?.small || '',
+    images_large: card.images?.large || '',
+    lang: 'en',
+    price_market: market,
+    price_low: low,
+    price_mid: firstNumber(pokemonTcgPrice(card, 'normal', 'mid'), pokemonTcgPrice(card, 'holofoil', 'mid'), pokemonTcgPrice(card, 'reverseHolofoil', 'mid')),
+    price_high: high,
+    price_trend: firstNumber(card.cardmarket?.prices?.trendPrice, market),
+    price_avg1: null,
+    price_avg7: null,
+    price_avg30: null,
+    price_tcg_normal_market: pokemonTcgPrice(card, 'normal', 'market'),
+    price_tcg_reverse_market: pokemonTcgPrice(card, 'reverseHolofoil', 'market'),
+    price_tcg_holo_market: pokemonTcgPrice(card, 'holofoil', 'market'),
+    attacks: card.attacks || [],
+    weaknesses: card.weaknesses || [],
+    retreatCost: card.retreatCost || [],
+    rules: card.rules || [],
+    legalities: card.legalities || null,
+    data_sources: ['Pokemon TCG API'],
+    price_sources: Object.keys(prices).length || card.cardmarket?.prices ? ['Pokemon TCG API'] : [],
+    price_confidence: market ? 'medium' : 'missing',
+    set_ref: {
+      id: set.id ? `${set.id}_en` : '',
+      tcg_set_id: set.id || '',
+      name: set.name || '',
+      series: set.series || '',
+      abbreviation: set.ptcgoCode || '',
+      images_logo: set.images?.logo || '',
+      images_symbol: set.images?.symbol || '',
+    },
+  }
+}
+
+function mergeProviderCard(primary, fallback) {
+  if (!primary) return fallback
+  if (!fallback) return primary
+  const merged = { ...primary }
+  for (const [key, value] of Object.entries(fallback)) {
+    const current = merged[key]
+    const missing = current == null || current === '' || (Array.isArray(current) && current.length === 0)
+    if (missing && value != null && value !== '') merged[key] = value
+  }
+  merged.data_sources = [...new Set([...(primary.data_sources || []), ...(fallback.data_sources || [])])]
+  merged.price_sources = [...new Set([...(primary.price_sources || []), ...(fallback.price_sources || [])])]
+  const priceChecks = [
+    merged.price_market,
+    merged.price_trend,
+    merged.price_tcg_normal_market,
+    merged.price_tcg_holo_market,
+    merged.price_tcg_reverse_market,
+  ].filter((value) => numberOrNull(value) !== null)
+  merged.price_confidence = priceChecks.length >= 2 ? 'high' : priceChecks.length === 1 ? 'medium' : 'missing'
+  return merged
+}
+
+function pokemonQueryValue(value = '') {
+  return String(value).trim().replace(/"/g, '\\"')
+}
+
+async function fetchPokemonTcgCard(cardId) {
+  const id = tcgdexId(cardId)
+  const url = `https://api.pokemontcg.io/v2/cards/${encodeURIComponent(id)}`
+  const { data } = await providerJson(pokemonTcgProviderName(), url, {
+    headers: pokemonTcgHeaders(),
+  }, { ttlMs: 24 * 60 * 60 * 1000 })
+  return data?.data ? normalizePokemonTcgCard(data.data) : null
+}
+
+async function searchPokemonTcgCards(url) {
+  const name = (url.searchParams.get('name') || '').trim()
+  const setId = (url.searchParams.get('set_id') || '').replace(/_en$/, '')
+  const type = url.searchParams.get('type') || ''
+  const rarity = (url.searchParams.get('rarity') || '').trim()
+  const artist = (url.searchParams.get('artist') || '').trim()
+  const page = Math.max(1, Number(url.searchParams.get('page') || 1))
+  const pageSize = Math.min(50, Math.max(1, Number(url.searchParams.get('page_size') || 20)))
+  if (!name && !setId && !type && !rarity && !artist) return { data: [], total_count: 0, page, page_size: pageSize }
+
+  const q = []
+  const codeMatch = /^([A-Za-z]+\d*)\s+(\d+)$/i.exec(name)
+  if (setId) q.push(`set.id:${pokemonQueryValue(setId)}`)
+  if (codeMatch && !setId) {
+    q.push(`set.id:${pokemonQueryValue(codeMatch[1])}`)
+    q.push(`number:${pokemonQueryValue(codeMatch[2])}`)
+  } else if (name) {
+    q.push(`name:"${pokemonQueryValue(name)}"`)
+  }
+  if (type) q.push(`types:${pokemonQueryValue(type)}`)
+  if (rarity) q.push(`rarity:"${pokemonQueryValue(rarity)}"`)
+  if (artist) q.push(`artist:"${pokemonQueryValue(artist)}"`)
+
+  const searchUrl = new URL('https://api.pokemontcg.io/v2/cards')
+  searchUrl.searchParams.set('q', q.join(' '))
+  searchUrl.searchParams.set('page', String(page))
+  searchUrl.searchParams.set('pageSize', String(pageSize))
+  const { data } = await providerJson(pokemonTcgProviderName(), searchUrl.toString(), {
+    headers: pokemonTcgHeaders(),
+  }, { ttlMs: 30 * 60 * 1000 })
+  const cards = Array.isArray(data?.data) ? data.data.map(normalizePokemonTcgCard) : []
+  return {
+    data: cards,
+    total_count: data?.totalCount ?? cards.length,
+    page: data?.page ?? page,
+    page_size: data?.pageSize ?? pageSize,
+  }
+}
+
 async function fetchCardForCollection(cardId) {
   const id = tcgdexId(cardId)
-  const response = await fetch(`https://api.tcgdex.net/v2/en/cards/${encodeURIComponent(id)}`)
-  if (!response.ok) throw new Error('Card was not found in the US card catalog.')
-  return normalizeTcgdexCard(await response.json())
+  try {
+    return await fetchMergedCard(id)
+  } catch {
+    const fallback = await fetchPokemonTcgCard(id)
+    if (fallback) return fallback
+    throw new Error('Card was not found in the US card catalog.')
+  }
 }
 
 async function tcgdexJson(path, params = {}) {
@@ -345,9 +653,8 @@ async function tcgdexJson(path, params = {}) {
   for (const [key, value] of Object.entries(params)) {
     if (value !== undefined && value !== null && value !== '') url.searchParams.set(key, String(value))
   }
-  const response = await fetch(url)
-  if (!response.ok) throw new Error(`TCGdex request failed: ${response.status}`)
-  return await response.json()
+  const { data } = await providerJson('tcgdex', url.toString(), {}, { ttlMs: 6 * 60 * 60 * 1000 })
+  return data
 }
 
 function withWebp(url) {
@@ -405,6 +712,43 @@ async function normalizeCardSearchResult(card) {
   }
 }
 
+async function fetchMergedCard(cardId) {
+  const id = tcgdexId(cardId)
+  let primary = null
+  let fallback = null
+  try {
+    primary = normalizeTcgdexCard(await tcgdexJson(`cards/${encodeURIComponent(id)}`))
+  } catch {}
+  try {
+    fallback = await fetchPokemonTcgCard(id)
+  } catch {}
+  const merged = mergeProviderCard(primary, fallback)
+  if (!merged) throw new Error('Card was not found in the free card catalogs.')
+  return merged
+}
+
+function mergeSearchProviderResults(primaryResult, fallbackResult) {
+  const map = new Map()
+  const add = (card) => {
+    const key = tcgdexId(card.tcg_card_id || card.id || card.card_id)
+    const existing = map.get(key)
+    map.set(key, existing ? mergeProviderCard(existing, card) : card)
+  }
+  ;(primaryResult?.data || []).forEach(add)
+  ;(fallbackResult?.data || []).forEach(add)
+  const pageSize = primaryResult?.page_size || fallbackResult?.page_size || 20
+  return {
+    data: Array.from(map.values()).slice(0, pageSize),
+    total_count: Math.max(primaryResult?.total_count || 0, fallbackResult?.total_count || 0, map.size),
+    page: primaryResult?.page || fallbackResult?.page || 1,
+    page_size: pageSize,
+    providers: {
+      primary: 'TCGdex',
+      fallback: fallbackResult ? 'Pokemon TCG API' : null,
+    },
+  }
+}
+
 function stripNumber(value = '') {
   const match = String(value).match(/[A-Za-z0-9-]+/)
   return match ? match[0].replace(/^0+/, '') || '0' : ''
@@ -450,11 +794,26 @@ async function searchTcgdexCards(url) {
   let cards = await Promise.all(pageRaw.map(normalizeCardSearchResult))
   if (artist) cards = cards.filter((card) => String(card.artist || '').toLowerCase().includes(artist))
 
-  return {
+  const primaryResult = {
     data: cards,
     total_count: totalCount,
     page,
     page_size: pageSize,
+  }
+
+  if (process.env.ENABLE_FREE_PROVIDER_FALLBACKS === 'false') return primaryResult
+
+  try {
+    const fallbackResult = await searchPokemonTcgCards(url)
+    return mergeSearchProviderResults(primaryResult, fallbackResult)
+  } catch (error) {
+    return {
+      ...primaryResult,
+      providers: {
+        primary: 'TCGdex',
+        fallback_error: error.code || error.message || 'Pokemon TCG API fallback unavailable',
+      },
+    }
   }
 }
 
@@ -599,6 +958,12 @@ async function tcgdexResponse(req, res, path, url) {
 
     if (path === 'cards/search' && req.method === 'GET') {
       send(res, 200, await searchTcgdexCards(url))
+      return true
+    }
+
+    const cardDetailMatch = /^cards\/([^/]+)$/.exec(path)
+    if (cardDetailMatch && req.method === 'GET') {
+      send(res, 200, await fetchMergedCard(decodeURIComponent(cardDetailMatch[1])))
       return true
     }
 

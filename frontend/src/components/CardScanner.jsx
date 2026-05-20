@@ -47,8 +47,13 @@ async function recognizeWithLocalOcr(file) {
   const { createWorker } = await import('tesseract.js')
   const worker = await createWorker('eng')
   try {
-    const { data } = await worker.recognize(file)
-    const { query, recognized } = bestOcrQuery(data.text || '')
+    const candidates = await createOcrCandidates(file)
+    const textParts = []
+    for (const candidate of candidates) {
+      const { data } = await worker.recognize(candidate)
+      if (data.text) textParts.push(data.text)
+    }
+    const { query, recognized } = bestOcrQuery(textParts.join('\n'))
     if (!query) throw new Error('Could not read enough text from the card. Try a brighter, closer photo.')
 
     const response = await searchCards({ name: query, page: 1, page_size: 12, lang: 'all' })
@@ -75,6 +80,48 @@ async function recognizeWithLocalOcr(file) {
     }
   } finally {
     await worker.terminate()
+  }
+}
+
+function loadImage(file) {
+  return new Promise((resolve, reject) => {
+    const image = new Image()
+    image.onload = () => resolve(image)
+    image.onerror = reject
+    image.src = URL.createObjectURL(file)
+  })
+}
+
+async function canvasToBlob(canvas) {
+  return await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.9))
+}
+
+async function createOcrCrop(image, crop, maxWidth = 1200) {
+  const scale = Math.min(1, maxWidth / crop.width)
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.max(1, Math.round(crop.width * scale))
+  canvas.height = Math.max(1, Math.round(crop.height * scale))
+  const ctx = canvas.getContext('2d')
+  ctx.filter = 'contrast(1.25) saturate(0.8) grayscale(1)'
+  ctx.drawImage(image, crop.x, crop.y, crop.width, crop.height, 0, 0, canvas.width, canvas.height)
+  return await canvasToBlob(canvas)
+}
+
+async function createOcrCandidates(file) {
+  const image = await loadImage(file)
+  try {
+    const w = image.naturalWidth || image.width
+    const h = image.naturalHeight || image.height
+    const crops = [
+      { x: 0, y: 0, width: w, height: h },
+      { x: 0, y: 0, width: w, height: h * 0.42 },
+      { x: 0, y: h * 0.58, width: w, height: h * 0.34 },
+      { x: w * 0.08, y: h * 0.05, width: w * 0.84, height: h * 0.32 },
+    ]
+    const blobs = await Promise.all(crops.map((crop) => createOcrCrop(image, crop)))
+    return blobs.filter(Boolean)
+  } finally {
+    URL.revokeObjectURL(image.src)
   }
 }
 

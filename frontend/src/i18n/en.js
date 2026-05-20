@@ -719,6 +719,7 @@ const en = {
     attacks: 'Attacks',
     weakness: 'Weakness',
     retreat: 'Retreat',
+    priceConfidence: 'Price confidence',
     showBack: 'Flip to back',
     showFront: 'Flip to front',
     cardBack: 'Card back',
