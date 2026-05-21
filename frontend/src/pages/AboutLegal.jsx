@@ -71,7 +71,7 @@ export default function AboutLegal() {
               PokeDokieDex is an unofficial collector tool.
             </h1>
             <p className="text-base leading-7 text-text-secondary sm:text-lg">
-              This page explains the source license, brand relationship, data sources, and pricing limits so collectors know what the app is and what it is not.
+              This page explains the source license, brand relationship, card information, and value limits so collectors know what the app is and what it is not.
             </p>
           </div>
         </section>
@@ -96,16 +96,16 @@ export default function AboutLegal() {
             </p>
           </LegalCard>
 
-          <LegalCard icon={BadgeDollarSign} title="Prices are estimates">
+          <LegalCard icon={BadgeDollarSign} title="Card values">
             <p>
-              Collection values are market estimates for convenience. They are not financial advice, appraisals, guaranteed sale prices, or promises that a card can be bought or sold for a displayed value.
+              Collection values are market guides for convenience. They are not financial advice, appraisals, guaranteed sale prices, or promises that a card can be bought or sold for a displayed value.
             </p>
             <p>
               Real value depends on condition, variant, grading, language, print run, seller fees, shipping, taxes, and current buyer demand. Confirm important prices with marketplace listings before buying or selling.
             </p>
           </LegalCard>
 
-          <LegalCard icon={Info} title="Data sources">
+          <LegalCard icon={Info} title="Card information">
             <p>
               Card data, images, and available market price fields are provided through{' '}
               <SourceLink href="https://tcgdex.dev">TCGdex</SourceLink>, which references marketplace data such as TCGPlayer and Cardmarket where available.
@@ -118,7 +118,7 @@ export default function AboutLegal() {
 
         <section className="rounded-2xl border border-border bg-bg-card/70 p-5 text-sm leading-6 text-text-muted">
           <p>
-            This page is informational and is not legal, tax, financial, or investment advice. For commercial use, trademark questions, or marketplace data rights, talk with a qualified professional and review each provider's terms.
+            This page is informational and is not legal, tax, financial, or investment advice. For commercial use, trademark questions, or marketplace data rights, talk with a qualified professional and review each service's terms.
           </p>
         </section>
       </div>

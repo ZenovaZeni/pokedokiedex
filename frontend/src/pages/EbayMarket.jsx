@@ -13,7 +13,7 @@ function formatRange(summary) {
 
 function setupMessage(error, status) {
   if (error?.response?.data?.code === 'EBAY_NOT_CONFIGURED' || status?.configured === false) {
-    return 'Add EBAY_CLIENT_ID and EBAY_CLIENT_SECRET in Vercel environment variables to turn on live eBay results.'
+    return 'Live eBay results are not turned on yet.'
   }
   return error?.response?.data?.detail || 'eBay search is unavailable right now.'
 }
@@ -83,7 +83,7 @@ export default function EbayMarket() {
           </button>
         </form>
         <p className="mt-3 text-xs leading-5 text-text-muted">
-          These are live active-listing asking prices from eBay Browse API. They are useful comps, not sold prices or appraisals.
+          These are live active-listing asking prices from eBay. They are useful comps, not sold prices or appraisals.
         </p>
       </section>
 
@@ -92,10 +92,10 @@ export default function EbayMarket() {
           <div className="flex items-start gap-3">
             <ShieldCheck size={20} className="mt-0.5 flex-shrink-0 text-yellow" />
             <div>
-              <h2 className="text-sm font-bold text-yellow">eBay API setup</h2>
+              <h2 className="text-sm font-bold text-yellow">eBay setup</h2>
               <p className="mt-1 text-sm leading-6 text-text-secondary">{setupMessage(error, status)}</p>
               <p className="mt-2 text-xs leading-5 text-text-muted">
-                The client secret stays on the Vercel serverless API and is never sent to the browser.
+                Private eBay credentials stay on the server and are never sent to the browser.
               </p>
             </div>
           </div>

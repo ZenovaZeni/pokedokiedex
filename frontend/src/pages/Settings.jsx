@@ -687,7 +687,7 @@ export default function Settings() {
                   GitHub ↗
                 </a>
               </SettingsRow>
-              <SettingsRow label="About / Legal" description="License, source, unofficial status, and price estimate notice" last>
+              <SettingsRow label="About / Legal" description="License, source, unofficial status, and value notice" last>
                 <Link
                   to="/legal"
                   className="text-xs font-semibold text-brand-red hover:opacity-80 transition-opacity"

@@ -569,7 +569,6 @@ export function CardModal({ card, onClose, onEdit, defaultLang = 'en' }) {
   const weaknesses = Array.isArray(card.weaknesses) ? card.weaknesses : []
   const retreatCost = Array.isArray(card.retreatCost) ? card.retreatCost : []
   const rules = Array.isArray(card.rules) ? card.rules : []
-  const dataSources = Array.isArray(card.data_sources) ? card.data_sources : []
   const priceConfidence = card.price_confidence || ''
 
   const addMutation = useMutation({
@@ -717,18 +716,11 @@ export function CardModal({ card, onClose, onEdit, defaultLang = 'en' }) {
                   {setName}{card.number ? ` · #${card.number}` : ''}
                 </p>}
                 <FallbackBadges card={card} className="mt-1" />
-                {(dataSources.length > 0 || priceConfidence) && (
+                {priceConfidence && (
                   <div className="mt-2 flex flex-wrap gap-1.5">
-                    {dataSources.map((source) => (
-                      <span key={source} className="rounded-full border border-white/10 bg-bg-card px-2 py-0.5 text-[10px] font-bold text-text-secondary">
-                        {source}
-                      </span>
-                    ))}
-                    {priceConfidence && (
-                      <span className="rounded-full border border-green/20 bg-green/10 px-2 py-0.5 text-[10px] font-bold text-green">
-                        {t('card.priceConfidence')}: {priceConfidence}
-                      </span>
-                    )}
+                    <span className="rounded-full border border-green/20 bg-green/10 px-2 py-0.5 text-[10px] font-bold text-green">
+                      {t('card.priceConfidence')}: {priceConfidence}
+                    </span>
                   </div>
                 )}
               </div>

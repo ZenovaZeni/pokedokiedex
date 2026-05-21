@@ -32,7 +32,7 @@ export default function Landing() {
                 Card chaos, neatly contained.
               </h1>
               <p className="max-w-2xl text-base leading-7 text-text-secondary sm:text-lg">
-                Track your collection, check USD market estimates, organize binders, and let one very serious little scanner keep the nonsense in order.
+                Track your collection, check USD card values, organize binders, and let one very serious little scanner keep the nonsense in order.
               </p>
             </div>
 
@@ -91,7 +91,7 @@ export default function Landing() {
         </section>
 
         <footer className="flex flex-col gap-2 border-t border-border py-5 text-xs text-text-muted sm:flex-row sm:items-center sm:justify-between">
-          <span>Unofficial collector tool. Prices are estimates.</span>
+          <span>Unofficial collector tool. Values can vary by condition and market.</span>
           <Link to="/legal" className="font-semibold text-brand-red transition-opacity hover:opacity-80">
             About / Legal
           </Link>
