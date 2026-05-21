@@ -214,6 +214,7 @@ export default function CardSearch() {
   const [selectedCard, setSelectedCard] = useState(null)
   const [selectMode, setSelectMode] = useState(false)
   const [selectedItems, setSelectedItems] = useState(new Map()) // card.id -> { card_id, lang }
+  const [submittedSmartSearch, setSubmittedSmartSearch] = useState(null)
   const langFilter = 'all'
   const pageSize = 20
 
@@ -246,7 +247,7 @@ export default function CardSearch() {
   }, [allSets])
 
   const smartSearch = useMemo(() => buildSmartSearch(searchInput, allSets), [allSets, searchInput])
-  const activeSmartSearch = useMemo(() => buildSmartSearch(filters.name, allSets), [allSets, filters.name])
+  const activeSmartSearch = submittedSmartSearch || buildSmartSearch(filters.name, allSets)
 
   const queryParams = {
     name: filters.name || undefined,
@@ -277,6 +278,7 @@ export default function CardSearch() {
   const handleSearch = (e) => {
     e.preventDefault()
     const parsed = buildSmartSearch(searchInput, allSets)
+    setSubmittedSmartSearch(parsed)
     setFilters(prev => ({
       ...prev,
       name: parsed?.query || searchInput.trim(),
@@ -286,6 +288,7 @@ export default function CardSearch() {
   }
 
   const setFilter = (key, value) => {
+    setSubmittedSmartSearch(null)
     setFilters(prev => {
       const next = { ...prev, [key]: value }
       if (key === 'series') {
@@ -305,6 +308,7 @@ export default function CardSearch() {
   const clearFilters = () => {
     setFilters({ name: '', type: '', rarity: '', set_id: '', series: '', artist: '', hp_min: '', hp_max: '', sort_by: '', sort_order: 'asc' })
     setSearchInput('')
+    setSubmittedSmartSearch(null)
     setPage(1)
   }
 
