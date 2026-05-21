@@ -769,6 +769,9 @@ async function searchTcgdexCards(url) {
   if (setId) {
     const set = await tcgdexJson(`sets/${encodeURIComponent(setId)}`)
     raw = Array.isArray(set.cards) ? set.cards : []
+    if (codeMatch) {
+      raw = raw.filter((card) => stripNumber(card.localId) === stripNumber(codeMatch[2]))
+    }
   } else if (codeMatch) {
     const [, wantedSet, wantedNumber] = codeMatch
     const sets = await tcgdexJson('sets')
