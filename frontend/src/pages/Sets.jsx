@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { Bell, BellOff, ChevronDown, ChevronUp, Filter, Search, SortAsc } from 'lucide-react'
+import { Bell, BellOff, ChevronDown, ChevronUp, Filter, Layers3, Search, SortAsc, Target, Trophy } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { getSets, markSetsSeen } from '../api/client'
 import { useSettings } from '../contexts/SettingsContext'
@@ -58,6 +58,27 @@ export default function Sets() {
 
   const newSets = sets.filter((set) => set.is_new)
   const allSeries = [...new Set(sets.map((set) => set.series).filter(Boolean))].sort()
+  const setProgressSummary = useMemo(() => {
+    const withTotals = sets.filter((set) => (set.total ?? 0) > 0)
+    const started = withTotals.filter((set) => (set.owned_count ?? 0) > 0)
+    const completed = withTotals.filter((set) => (set.owned_count ?? 0) >= (set.total ?? 0))
+    const missing = started.reduce((sum, set) => sum + Math.max(0, (set.total ?? 0) - (set.owned_count ?? 0)), 0)
+    const closest = started
+      .filter((set) => (set.owned_count ?? 0) < (set.total ?? 0))
+      .sort((a, b) => {
+        const pctA = (a.owned_count ?? 0) / (a.total ?? 1)
+        const pctB = (b.owned_count ?? 0) / (b.total ?? 1)
+        if (pctA !== pctB) return pctB - pctA
+        return ((a.total ?? 0) - (a.owned_count ?? 0)) - ((b.total ?? 0) - (b.owned_count ?? 0))
+      })[0]
+
+    return {
+      startedCount: started.length,
+      completedCount: completed.length,
+      missingCount: missing,
+      closest,
+    }
+  }, [sets])
 
   const filtered = useMemo(() => {
     const next = sets.filter((set) => {
@@ -158,6 +179,56 @@ export default function Sets() {
               <p className="text-xs text-text-secondary">{newSets.map((set) => set.name).join(', ')}</p>
             </div>
           </div>
+        </div>
+      )}
+
+      {!isLoading && sets.length > 0 && (
+        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+          {[
+            {
+              icon: Layers3,
+              label: 'In progress',
+              value: setProgressSummary.startedCount.toLocaleString(),
+              tone: 'text-blue-400',
+            },
+            {
+              icon: Trophy,
+              label: 'Completed',
+              value: setProgressSummary.completedCount.toLocaleString(),
+              tone: 'text-gold',
+            },
+            {
+              icon: Target,
+              label: 'Missing cards',
+              value: setProgressSummary.missingCount.toLocaleString(),
+              tone: 'text-brand-red',
+            },
+            {
+              icon: Target,
+              label: 'Closest set',
+              value: setProgressSummary.closest
+                ? `${Math.max(0, (setProgressSummary.closest.total ?? 0) - (setProgressSummary.closest.owned_count ?? 0))} left`
+                : 'Start one',
+              detail: setProgressSummary.closest?.name || 'Add cards to begin',
+              tone: 'text-green',
+              onClick: setProgressSummary.closest ? () => navigate(`/sets/${setProgressSummary.closest.id}`) : undefined,
+            },
+          ].map(({ icon: Icon, label, value, detail, tone, onClick }) => (
+            <button
+              key={label}
+              type="button"
+              onClick={onClick}
+              disabled={!onClick}
+              className="rounded-2xl border border-border bg-bg-card p-3 text-left transition-colors enabled:hover:border-brand-red/40 disabled:cursor-default"
+            >
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">{label}</span>
+                <Icon size={15} className={tone} />
+              </div>
+              <p className={`text-xl font-black leading-tight ${tone}`}>{value}</p>
+              {detail && <p className="mt-1 truncate text-[11px] text-text-muted">{detail}</p>}
+            </button>
+          ))}
         </div>
       )}
 

@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useSettings } from '../contexts/SettingsContext'
 import toast from 'react-hot-toast'
 import { CARD_VARIANTS, getDefaultVariant } from '../utils/cardVariants'
+import { CardModal } from './CardItem'
 
 const SLASH_NUMBER_RE = /(\d{1,4})\s*\/\s*\d{1,4}/
 const CODE_NUMBER_RE = /\b([A-Za-z]{2,}\d*)\s+(\d{1,4})\b/
@@ -302,6 +303,7 @@ export default function CardScanner({ isOpen, onClose, onCardSelected }) {
   const [preview, setPreview] = useState(null)
   const [results, setResults] = useState(null)
   const [addModal, setAddModal] = useState(null) // match to show modal for
+  const [selectedMatch, setSelectedMatch] = useState(null)
   const fileRef = useRef()
   const { t } = useSettings()
 
@@ -345,6 +347,23 @@ export default function CardScanner({ isOpen, onClose, onCardSelected }) {
     setPreview(null)
     setResults(null)
     setAddModal(null)
+    setSelectedMatch(null)
+  }
+
+  const openMatchDetails = (match) => {
+    setSelectedMatch({
+      ...match,
+      images_small: match.images_small || match.image,
+      images_large: match.images_large || match.image,
+      images: match.images || (match.image ? { small: match.image, large: match.image } : undefined),
+      set_ref: match.set_ref || {
+        name: match.set_name || match.set_abbreviation || match.set_id,
+        abbreviation: match.set_abbreviation || match.set_id,
+      },
+      lang: match.lang || 'en',
+      _lang: match._lang || match.lang || 'en',
+      price_confidence: match.price_confidence || 'strong',
+    })
   }
 
   return (
@@ -447,7 +466,7 @@ export default function CardScanner({ isOpen, onClose, onCardSelected }) {
                     return (
                       <div key={match.id}
                         className="flex flex-col cursor-pointer group hover:shadow-glow transition-all duration-200 hover:rotate-1"
-                        onClick={() => setAddModal(match)}
+                        onClick={() => openMatchDetails(match)}
                       >
                         {/* Card image — full width, portrait aspect ratio — exact CardItem hover effect */}
                         <div className="relative w-full aspect-[2.5/3.5] overflow-hidden rounded-xl ring-1 ring-white/5 group-hover:ring-2 group-hover:ring-brand-red/30 transition-all duration-200">
@@ -498,12 +517,12 @@ export default function CardScanner({ isOpen, onClose, onCardSelected }) {
         )}
       </div>
 
-      {/* Add-to-collection modal */}
-      {addModal && (
-        <ScanAddModal
-          match={addModal}
-          onClose={() => setAddModal(null)}
-          onAdded={() => setAddModal(null)}
+      {/* Shared card detail/add modal */}
+      {selectedMatch && (
+        <CardModal
+          card={selectedMatch}
+          onClose={() => setSelectedMatch(null)}
+          defaultLang={selectedMatch._lang || 'en'}
         />
       )}
     </div>
