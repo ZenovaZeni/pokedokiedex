@@ -157,7 +157,7 @@ function AddExpenseModal({ onClose, onSuccess }) {
 export default function Analytics() {
   const { t, formatPrice } = useSettings()
   const [moversPeriod, setMoversPeriod] = useState('7d')
-  const [activeTab, setActiveTab] = useState('duplicates')
+  const [activeTab, setActiveTab] = useState('investment')
   const [showExpenseModal, setShowExpenseModal] = useState(false)
   const queryClient = useQueryClient()
   const ANALYTICS_TABS = [
@@ -220,9 +220,15 @@ export default function Analytics() {
   const totalSoldCost = soldProducts.reduce((sum, p) => sum + (p.purchase_price || 0), 0)
   const realizedPnl = totalSoldRevenue - totalSoldCost
   const unrealizedPnl = (latestSnapshot?.value ?? 0) - (latestSnapshot?.cost ?? 0)
+  const firstSnapshot = investmentData.length > 0 ? investmentData[0] : null
+  const historyChange = latestSnapshot && firstSnapshot ? latestSnapshot.value - firstSnapshot.value : 0
+  const historyChangePct = firstSnapshot?.value > 0 ? (historyChange / firstSnapshot.value) * 100 : 0
+  const moversUp = topMovers.filter(card => Number(card.change_pct ?? 0) >= 0).length
+  const moversDown = Math.max(topMovers.length - moversUp, 0)
+  const strongestRarity = rarityStats[0]
 
   return (
-    <div className="space-y-4 pb-2">
+    <div className="space-y-4 pb-28">
       <TabNav tabs={ANALYTICS_TABS} />
       <div>
         <h1 className="text-xl font-bold text-text-primary">{t('analytics.title')}</h1>
@@ -236,6 +242,49 @@ export default function Analytics() {
           </p>
         </div>
       )}
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+        <button
+          onClick={() => setActiveTab('investment')}
+          className="rounded-xl p-3 text-left transition-colors hover:bg-bg-elevated"
+          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+        >
+          <p className="text-[11px] text-text-muted mb-1">Value history</p>
+          <p className="text-lg font-black text-yellow">{latestSnapshot ? formatPrice(latestSnapshot.value) : formatPrice(0)}</p>
+          <p className={clsx('text-xs font-semibold mt-1', historyChange >= 0 ? 'text-green' : 'text-brand-red')}>
+            {historyChange >= 0 ? '+' : ''}{formatPrice(historyChange)} ({historyChangePct >= 0 ? '+' : ''}{historyChangePct.toFixed(1)}%)
+          </p>
+        </button>
+        <button
+          onClick={() => setActiveTab('investment')}
+          className="rounded-xl p-3 text-left transition-colors hover:bg-bg-elevated"
+          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+        >
+          <p className="text-[11px] text-text-muted mb-1">Profit / loss</p>
+          <p className={clsx('text-lg font-black', unrealizedPnl >= 0 ? 'text-green' : 'text-brand-red')}>
+            {unrealizedPnl >= 0 ? '+' : ''}{formatPrice(unrealizedPnl)}
+          </p>
+          <p className="text-xs text-text-muted mt-1">Current collection</p>
+        </button>
+        <button
+          onClick={() => setActiveTab('movers')}
+          className="rounded-xl p-3 text-left transition-colors hover:bg-bg-elevated"
+          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+        >
+          <p className="text-[11px] text-text-muted mb-1">Market movers</p>
+          <p className="text-lg font-black text-text-primary">{topMovers.length}</p>
+          <p className="text-xs text-text-muted mt-1">{moversUp} up / {moversDown} down</p>
+        </button>
+        <button
+          onClick={() => setActiveTab('rarity')}
+          className="rounded-xl p-3 text-left transition-colors hover:bg-bg-elevated"
+          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+        >
+          <p className="text-[11px] text-text-muted mb-1">Rarity mix</p>
+          <p className="text-lg font-black text-text-primary truncate">{strongestRarity?.rarity || '-'}</p>
+          <p className="text-xs text-text-muted mt-1">{strongestRarity ? formatPrice(strongestRarity.total_value || 0) : 'No cards yet'}</p>
+        </button>
+      </div>
 
       {/* Tabs */}
       <div className="overflow-x-auto border-b border-border pb-1 -mx-1 px-1">
@@ -491,9 +540,13 @@ export default function Analytics() {
 
           {investLoading ? (
             <div className="skeleton h-64 rounded-xl" />
-          ) : chartData.length === 0 ? (
+          ) : chartData.length < 2 ? (
             <div className="card text-center py-12 space-y-3">
-              <p className="text-text-muted">{t('analytics.noInvestmentData')}</p>
+              <p className="text-text-muted">
+                {chartData.length === 1
+                  ? 'History tracking has started. Add, edit, or remove a card later to create the next point.'
+                  : t('analytics.noInvestmentData')}
+              </p>
               <button onClick={() => setShowExpenseModal(true)} className="btn-ghost text-green border-green/30 hover:bg-green/10 mx-auto text-sm">
                 <ShoppingCart size={14} /> {t('analytics.logFirst')}
               </button>

@@ -8,7 +8,7 @@ import {
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from 'recharts'
-import { getDashboard, triggerPriceSync, getSyncStatus, getInvestmentTracker } from '../api/client'
+import { getDashboard, triggerPriceSync, getSyncStatus, getInvestmentTracker, getTopMovers } from '../api/client'
 import { useSettings } from '../contexts/SettingsContext'
 import { useAuth } from '../contexts/AuthContext'
 import toast from 'react-hot-toast'
@@ -92,6 +92,12 @@ export default function HomeScreen() {
     refetchInterval: 120000,
   })
 
+  const { data: topMovers = [] } = useQuery({
+    queryKey: ['top-movers-preview'],
+    queryFn: () => getTopMovers(7).then(r => r.data),
+    refetchInterval: 120000,
+  })
+
   const trainerName = user?.username || 'Trainer'
 
   const syncMutation = useMutation({
@@ -135,6 +141,15 @@ export default function HomeScreen() {
     const first = chartData[0]?.value ?? 0
     const last = chartData[chartData.length - 1]?.value ?? 0
     return last >= first ? '#66bb6a' : '#e3000b'
+  }, [chartData])
+
+  const chartDelta = useMemo(() => {
+    if (chartData.length < 2) return null
+    const first = chartData[0]?.value ?? 0
+    const last = chartData[chartData.length - 1]?.value ?? 0
+    const abs = last - first
+    const pct = first > 0 ? (abs / first) * 100 : 0
+    return { abs, pct }
   }, [chartData])
 
   // Portal navigation items — defined inside component so t() works
@@ -312,8 +327,11 @@ export default function HomeScreen() {
           style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
 
           {/* Header row */}
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-bold text-white uppercase tracking-wider">{t('home.portfolioHistory')}</p>
+          <div className="flex items-center justify-between mb-3 gap-3">
+            <button onClick={() => navigate('/analytics')} className="text-left min-w-0">
+              <p className="text-xs font-bold text-white uppercase tracking-wider">{t('home.portfolioHistory')}</p>
+              <p className="text-[10px] text-text-muted mt-0.5">Tap for full insights</p>
+            </button>
             <div className="flex gap-1">
               {PERIODS.map(p => (
                 <button
@@ -374,7 +392,53 @@ export default function HomeScreen() {
               </AreaChart>
             </ResponsiveContainer>
           )}
+          {chartDelta && (
+            <div className="mt-3 flex items-center justify-between rounded-xl px-3 py-2"
+              style={{ background: 'rgba(255,255,255,0.035)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <span className="text-[11px] text-text-muted">Selected range</span>
+              <span className="text-xs font-black" style={{ color: chartDelta.abs >= 0 ? '#66bb6a' : '#e3000b' }}>
+                {chartDelta.abs >= 0 ? '+' : ''}{formatPrice(chartDelta.abs)} ({chartDelta.pct >= 0 ? '+' : ''}{chartDelta.pct.toFixed(1)}%)
+              </span>
+            </div>
+          )}
         </div>
+
+        {/* Market movers preview */}
+        {topMovers.length > 0 && (
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-bold text-white uppercase tracking-wider">Market Movers</p>
+              <button onClick={() => navigate('/analytics')}
+                className="text-[11px] font-semibold hover:opacity-80 transition-opacity"
+                style={{ color:'#f5c842' }}>Open insights -&gt;</button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {topMovers.slice(0, 3).map(card => {
+                const up = Number(card.change_pct ?? 0) >= 0
+                return (
+                  <button
+                    key={card.card_id || card.id}
+                    onClick={() => navigate('/analytics')}
+                    className="flex items-center gap-3 rounded-2xl p-3 text-left active:scale-[0.99] transition-transform"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+                  >
+                    <CardImage src={resolveCardImageUrl(card)} alt={card.name} className="h-14 w-10 rounded-md object-cover flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold text-text-primary truncate">{card.name}</p>
+                      <p className="text-xs text-text-muted truncate">{card.rarity || card.set_ref?.name || 'Card'}</p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-sm font-black" style={{ color: up ? '#66bb6a' : '#e3000b' }}>
+                        {up ? '+' : ''}{Number(card.change_pct ?? 0).toFixed(1)}%
+                      </p>
+                      <p className="text-[10px] text-text-muted">{formatPrice(Number(card.current_price ?? card.price_market ?? 0))}</p>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* ── NAVIGATION PORTAL GRID ── */}
         <div>

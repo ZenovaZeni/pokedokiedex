@@ -1083,7 +1083,9 @@ async function convexResponse(req, res, path) {
   }
 
   const token = authToken(req)
-  if (!token && ['collection', 'dashboard', 'settings'].includes(path)) {
+  const authRequiredPaths = ['collection', 'dashboard', 'settings']
+  const requiresAuth = authRequiredPaths.includes(path) || path.startsWith('analytics/')
+  if (!token && requiresAuth) {
     send(res, 401, { detail: 'Not authenticated' })
     return true
   }
@@ -1174,6 +1176,30 @@ async function convexResponse(req, res, path) {
     return true
   }
 
+  if (path === 'analytics/investment-tracker') {
+    send(res, 200, await convex.query(convexApi.cards.investmentTracker, { token }))
+    return true
+  }
+
+  if (path === 'analytics/top-movers') {
+    const url = new URL(req.url, 'https://pokedokiedex.vercel.app')
+    send(res, 200, await convex.query(convexApi.cards.topMovers, {
+      token,
+      days: Number(url.searchParams.get('days') || 7),
+    }))
+    return true
+  }
+
+  if (path === 'analytics/rarity-stats') {
+    send(res, 200, await convex.query(convexApi.cards.rarityStats, { token }))
+    return true
+  }
+
+  if (path === 'analytics/duplicates') {
+    send(res, 200, await convex.query(convexApi.cards.duplicates, { token }))
+    return true
+  }
+
   if (path === 'settings') {
     send(res, 200, settings)
     return true
@@ -1230,6 +1256,11 @@ export default async function handler(req, res) {
       products_sold_cost: 0,
       recent_additions: [sampleCard],
       top_cards: [{ ...sampleCard, total_value: 3.75 }],
+      value_history: [
+        { date: '2026-05-14T00:00:00Z', value: 2.25, cost: 2.25, pnl: 0 },
+        { date: '2026-05-18T00:00:00Z', value: 3.15, cost: 2.25, pnl: 0.9 },
+        { date: '2026-05-20T00:00:00Z', value: 3.75, cost: 2.25, pnl: 1.5 },
+      ],
     })
   }
 
@@ -1242,6 +1273,25 @@ export default async function handler(req, res) {
   }
 
   if (path === 'collection') return send(res, 200, sampleCollection)
+  if (path === 'analytics/top-movers') {
+    return send(res, 200, [{
+      ...sampleCard,
+      card_id: sampleCard.id,
+      quantity: 3,
+      old_price: 1.05,
+      current_price: 1.25,
+      change_abs: 0.2,
+      change_pct: 19,
+    }])
+  }
+  if (path === 'analytics/rarity-stats') {
+    return send(res, 200, [{
+      rarity: sampleCard.rarity,
+      count: 3,
+      percentage: 100,
+      total_value: 3.75,
+    }])
+  }
   if (path === 'sets') return send(res, 200, [sampleCard.set_ref])
   if (path === 'sync/status') {
     return send(res, 200, {
@@ -1268,8 +1318,6 @@ export default async function handler(req, res) {
     path === 'binders' ||
     path === 'products' ||
     path === 'analytics/duplicates' ||
-    path === 'analytics/top-movers' ||
-    path === 'analytics/rarity-stats' ||
     path === 'analytics/new-sets' ||
     path === 'github/contributors' ||
     path === 'github/supporters' ||

@@ -26,4 +26,16 @@ export default defineSchema({
     addedAt: v.number(),
     card: v.any(),
   }).index('by_user', ['userId']),
+
+  portfolioSnapshots: defineTable({
+    userId: v.id('users'),
+    dateKey: v.string(),
+    value: v.number(),
+    cost: v.number(),
+    pnl: v.number(),
+    cardCount: v.number(),
+    createdAt: v.number(),
+  })
+    .index('by_user', ['userId'])
+    .index('by_user_date', ['userId', 'dateKey']),
 })
